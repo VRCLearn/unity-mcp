@@ -1,0 +1,66 @@
+name: Release VPM package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+
+concurrency:
+  group: vpm-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref_type == 'branch' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the fork
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build and validate the VPM archive
+        id: package
+        shell: pwsh
+        run: ./.github/vpm/scripts/build-package.ps1 -Revision "$env:GITHUB_SHA"
+
+      - name: Ensure the release is new
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists and is immutable." >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag $RELEASE_TAG already exists." >&2
+            exit 1
+          fi
+
+      - name: Publish the GitHub release
+        env:
+          ARTIFACT_NAME: ${{ steps.package.outputs.artifact_name }}
+          DISPLAY_NAME: ${{ steps.package.outputs.display_name }}
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          ZIP_PATH: ${{ steps.package.outputs.zip_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gh release create "$RELEASE_TAG" \
+            "$ZIP_PATH#$ARTIFACT_NAME" \
+            --target "$GITHUB_SHA" \
+            --title "$DISPLAY_NAME $PACKAGE_VERSION" \
+            --notes "VPM distribution of MCP for Unity $PACKAGE_VERSION from the VRCLearn fork. Source authorship and the MIT license remain with CoplayDev and the upstream contributors."
+
+      - name: Refresh the VPM repository listing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: gh workflow run vpm-listing.yml --ref main
