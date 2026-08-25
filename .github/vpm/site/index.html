@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MCP for Unity VPM repository">
+    <title>MCP for Unity | VRCLearn</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main>
+        <section class="hero">
+            <p class="eyebrow">VRCLearn VPM repository</p>
+            <h1 id="listing-name">MCP for Unity</h1>
+            <p id="listing-description" class="description">Loading repository information…</p>
+            <div class="actions">
+                <button id="add-to-vcc" type="button" disabled>Add to VCC</button>
+                <button id="copy-url" class="secondary" type="button" disabled>Copy repository URL</button>
+            </div>
+            <code id="repository-url">Loading…</code>
+            <p id="copy-status" class="status" aria-live="polite"></p>
+        </section>
+
+        <section class="packages" aria-labelledby="packages-heading">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Available package</p>
+                    <h2 id="packages-heading">Latest stable release</h2>
+                </div>
+                <a id="info-link" hidden>Source and documentation</a>
+            </div>
+            <div id="package-grid" class="package-grid">
+                <p class="loading">Loading packages…</p>
+            </div>
+        </section>
+
+        <section class="notice">
+            <p class="eyebrow">After installation</p>
+            <h2>Finish setup in Unity</h2>
+            <p>
+                Python 3.10+, <code>uv</code>, and an MCP client are still required.
+                Open <strong>Window → MCP for Unity</strong> and follow the setup wizard.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        MCP for Unity is authored by
+        <a href="https://github.com/CoplayDev/unity-mcp">CoplayDev</a>.
+        This VPM distribution is maintained by
+        <a id="author-link"><span id="author-name">VRCLearn</span></a>.
+    </footer>
+    <script src="app.js"></script>
+</body>
+</html>
