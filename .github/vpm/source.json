@@ -1,0 +1,22 @@
+{
+    "name": "MCP for Unity | VRCLearn",
+    "id": "io.github.vrclearn.unity-mcp",
+    "url": "https://vrclearn.github.io/unity-mcp/index.json",
+    "author": {
+        "name": "VRCLearn",
+        "url": "https://github.com/VRCLearn"
+    },
+    "description": "VPM distribution of the VRCLearn fork of CoplayDev/MCP for Unity.",
+    "bannerUrl": "banner.png",
+    "infoLink": {
+        "text": "Source and documentation",
+        "url": "https://github.com/VRCLearn/unity-mcp"
+    },
+    "repository": "VRCLearn/unity-mcp",
+    "packageName": "com.coplaydev.unity-mcp",
+    "upstreamRepository": "CoplayDev/unity-mcp",
+    "releaseBootstrapVersion": "10.1.2",
+    "githubRepos": [
+        "VRCLearn/unity-mcp"
+    ]
+}

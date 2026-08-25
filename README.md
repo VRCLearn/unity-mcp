@@ -51,6 +51,24 @@ Control the Unity Editor in natural language from any MCP client — create scen
 
 **Requirements:** Unity **2021.3 LTS → 6.x** · Python **3.10+** (via [`uv`](https://docs.astral.sh/uv/)). Works with **any MCP client** — Claude Desktop & Code, Cursor, VS Code, Windsurf, Cline, Gemini CLI, and more.
 
+### VRChat Creator Companion
+
+The [VRCLearn fork](https://github.com/VRCLearn/unity-mcp) provides an
+unofficial VPM distribution. Add the following community repository to VCC,
+then install **MCP for Unity**:
+
+```text
+https://vrclearn.github.io/unity-mcp/index.json
+```
+
+VPM installs the Unity plugin; Python, `uv`, and MCP client configuration still
+use the normal setup flow below. See [VPM.md](VPM.md) for packaging and
+versioning details. The fork also localizes the Unity Editor interface in
+English, Japanese, Traditional Chinese, and Simplified Chinese; choose the
+language from the **Advanced** tab.
+
+### Standard Unity installation
+
 1. **Install** — Unity → Package Manager → Add from git URL:
    `https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main` &nbsp;_(pin `#v10.0.0` for this release, or `openupm add com.coplaydev.unity-mcp`)_
 2. **Configure** — `Window → MCP for Unity → Configure All Detected Clients`.
