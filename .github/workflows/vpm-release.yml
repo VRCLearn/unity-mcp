@@ -1,66 +1,414 @@
 name: Release VPM package
 
 on:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   actions: write
   contents: write
 
+env:
+  GH_REPO: ${{ github.repository }}
+
 concurrency:
   group: vpm-release
   cancel-in-progress: false
 
 jobs:
-  release:
-    if: github.ref_type == 'branch' && github.ref_name == 'main'
+  prepare:
+    name: Prepare the upstream release snapshot
     runs-on: ubuntu-latest
+    outputs:
+      candidate_branch: ${{ steps.candidate.outputs.candidate_branch }}
+      candidate_sha: ${{ steps.candidate.outputs.candidate_sha }}
+      changed: ${{ steps.candidate.outputs.changed }}
+      release_tag: ${{ steps.candidate.outputs.release_tag }}
+      upstream_sha: ${{ steps.candidate.outputs.upstream_sha }}
+      upstream_tag: ${{ steps.candidate.outputs.upstream_tag }}
     steps:
-      - name: Check out the fork
+      - name: Check out main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: main
 
-      - name: Build and validate the VPM archive
-        id: package
-        shell: pwsh
-        run: ./.github/vpm/scripts/build-package.ps1 -Revision "$env:GITHUB_SHA"
-
-      - name: Ensure the release is new
+      - name: Build an exact upstream release snapshot with the fork overlay
+        id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          RUN_ID: ${{ github.run_id }}
         shell: bash
         run: |
           set -euo pipefail
 
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "Release $RELEASE_TAG already exists and is immutable." >&2
-            exit 1
-          fi
-          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "Tag $RELEASE_TAG already exists." >&2
+          config=.github/vpm/source.json
+          upstream_repo="$(jq -r '.upstreamRepository' "$config")"
+          bootstrap_version="$(jq -r '.releaseBootstrapVersion' "$config")"
+          main_sha="$(git rev-parse HEAD)"
+
+          if ! [[ "$upstream_repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || \
+             ! [[ "$bootstrap_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid upstream release configuration." >&2
             exit 1
           fi
 
+          git remote add upstream "https://github.com/${upstream_repo}.git"
+          git fetch --force --no-tags upstream \
+            refs/heads/main:refs/remotes/upstream/main
+          upstream_main="$(git rev-parse refs/remotes/upstream/main)"
+
+          if ! git merge-base --is-ancestor "$upstream_main" "$main_sha"; then
+            echo "Fork main does not yet contain upstream main at $upstream_main." >&2
+            echo "Synchronize main before creating a package release." >&2
+            exit 1
+          fi
+
+          version_is_greater() {
+            local candidate="$1"
+            local baseline="$2"
+            local greatest
+            greatest="$(printf '%s\n%s\n' "$candidate" "$baseline" | sort -V | tail -n 1)"
+            [[ "$candidate" != "$baseline" && "$greatest" == "$candidate" ]]
+          }
+
+          selected_tag=""
+          selected_version=""
+          selected_sha=""
+          mapfile -t release_rows < <(
+            gh api --paginate "repos/${upstream_repo}/releases?per_page=100" \
+              --jq '.[] | select(.draft == false and .prerelease == false) | [(.published_at // .created_at), .tag_name] | @tsv' \
+              | sort
+          )
+
+          for release_row in "${release_rows[@]}"; do
+            IFS=$'\t' read -r published_at upstream_tag <<< "$release_row"
+            if ! [[ "$upstream_tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+              echo "Ignoring unsupported upstream release tag $upstream_tag published at $published_at."
+              continue
+            fi
+
+            version="${BASH_REMATCH[1]}"
+            if [[ "$version" != "$bootstrap_version" ]] && \
+               ! version_is_greater "$version" "$bootstrap_version"; then
+              continue
+            fi
+
+            git fetch --force --no-tags upstream \
+              "refs/tags/${upstream_tag}:refs/remotes/upstream/release-check"
+            upstream_sha="$(git rev-parse 'refs/remotes/upstream/release-check^{commit}')"
+            release_tag="$version"
+
+            release_json=""
+            for release_lookup_attempt in 1 2 3 4 5; do
+              if release_json="$(
+                gh release view "$release_tag" \
+                  --json assets,body,isDraft,isPrerelease 2>/dev/null
+              )"; then
+                break
+              fi
+              release_json=""
+              if ! git ls-remote --exit-code --tags origin \
+                   "refs/tags/$release_tag" >/dev/null 2>&1; then
+                break
+              fi
+              if [[ "$release_lookup_attempt" -lt 5 ]]; then
+                echo "Release $release_tag is not visible yet; retrying in 5 seconds."
+                sleep 5
+              fi
+            done
+
+            if [[ -n "$release_json" ]]; then
+              if [[ "$(jq -r '.isDraft or .isPrerelease' <<< "$release_json")" == "true" ]]; then
+                echo "Existing VPM release $release_tag is not a stable published release." >&2
+                exit 1
+              fi
+              if ! jq -e --arg marker "<!-- upstream-source:${upstream_sha} -->" \
+                   '.body | contains($marker)' <<< "$release_json" >/dev/null; then
+                echo "Existing VPM release $release_tag does not match upstream commit $upstream_sha." >&2
+                exit 1
+              fi
+              for expected_asset in \
+                "com.coplaydev.unity-mcp-${version}.zip" \
+                "com.coplaydev.unity-mcp-${version}.unitypackage" \
+                package.json; do
+                if ! jq -e --arg name "$expected_asset" \
+                     '.assets | any(.name == $name)' <<< "$release_json" >/dev/null; then
+                  echo "Existing VPM release $release_tag is missing $expected_asset." >&2
+                  exit 1
+                fi
+              done
+              echo "VPM release $release_tag already mirrors upstream $upstream_sha."
+              continue
+            fi
+
+            if git ls-remote --exit-code --tags origin "refs/tags/$release_tag" >/dev/null 2>&1; then
+              echo "Tag $release_tag exists without a GitHub release." >&2
+              exit 1
+            fi
+
+            selected_tag="$upstream_tag"
+            selected_version="$version"
+            selected_sha="$upstream_sha"
+            break
+          done
+
+          if [[ -z "$selected_tag" ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "candidate_branch=" >> "$GITHUB_OUTPUT"
+            echo "candidate_sha=" >> "$GITHUB_OUTPUT"
+            echo "release_tag=" >> "$GITHUB_OUTPUT"
+            echo "upstream_sha=" >> "$GITHUB_OUTPUT"
+            echo "upstream_tag=" >> "$GITHUB_OUTPUT"
+            echo "Every eligible upstream release is already synchronized."
+            exit 0
+          fi
+
+          upstream_tag="$selected_tag"
+          version="$selected_version"
+          release_tag="$version"
+          release_commit="$selected_sha"
+
+          if ! git merge-base --is-ancestor "$release_commit" "$upstream_main"; then
+            echo "Upstream release $upstream_tag at $release_commit is not in main." >&2
+            exit 1
+          fi
+
+          overlay_patch="$RUNNER_TEMP/fork-overlay.patch"
+          git diff --binary --full-index "$upstream_main" "$main_sha" -- \
+            . \
+            ':(exclude,glob).github/workflows/**' \
+            ':(exclude,glob).github/vpm/**' \
+            ':(exclude)VPM.md' \
+            > "$overlay_patch"
+
+          git switch --detach "$release_commit"
+          if [[ -s "$overlay_patch" ]]; then
+            if ! git apply --3way --index "$overlay_patch"; then
+              conflicts="$(git diff --name-only --diff-filter=U)"
+              echo "::error title=Release overlay conflict::The current fork changes could not be applied to upstream $upstream_tag."
+              {
+                echo "## Manual release synchronization required"
+                echo
+                echo "The fork overlay conflicts with upstream release \`$upstream_tag\`:"
+                echo
+                echo '```text'
+                echo "$conflicts"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          fi
+
+          git restore --source="$main_sha" --staged --worktree -- \
+            .github/workflows \
+            .github/vpm \
+            VPM.md
+
+          package_version="$(jq -r '.version' MCPForUnity/package.json)"
+          server_version="$(sed -n 's/^version = "\([^"]*\)"$/\1/p' Server/pyproject.toml)"
+          manifest_version="$(jq -r '.version' manifest.json)"
+          if [[ "$package_version" != "$version" || \
+                "$server_version" != "$version" || \
+                "$manifest_version" != "$version" ]]; then
+            echo "Release snapshot version mismatch: upstream=$version, package=$package_version, server=$server_version, manifest=$manifest_version" >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          candidate_tree="$(git write-tree)"
+          candidate_sha="$(
+            printf 'Create VPM snapshot for upstream %s\n' "$upstream_tag" |
+              git commit-tree "$candidate_tree" -p "$main_sha"
+          )"
+          git diff --check "$main_sha" "$candidate_sha" -- \
+            . ':(exclude,glob)**/*.meta'
+
+          candidate_branch="automation/vpm-${version}-${RUN_ID}"
+          git push origin "${candidate_sha}:refs/heads/${candidate_branch}"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "candidate_branch=$candidate_branch" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$candidate_sha" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$release_commit" >> "$GITHUB_OUTPUT"
+          echo "upstream_tag=$upstream_tag" >> "$GITHUB_OUTPUT"
+          echo "Prepared $release_tag from upstream $upstream_tag as $candidate_sha."
+
+      - name: Validate localization coverage
+        if: steps.candidate.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/vpm/scripts/validate-localization.ps1
+
+      - name: Build and validate the candidate VPM archive
+        if: steps.candidate.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/vpm/scripts/build-package.ps1 -Revision "${{ steps.candidate.outputs.candidate_sha }}"
+
+  unity_availability:
+    name: Detect Unity test credentials
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.detect.outputs.available }}
+    steps:
+      - name: Detect Unity test credentials
+        id: detect
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -n "$UNITY_LICENSE" ]] || \
+             { [[ -n "$UNITY_EMAIL" ]] && [[ -n "$UNITY_PASSWORD" ]] && [[ -n "$UNITY_SERIAL" ]]; }; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::Unity tests will be skipped because the repository has no Unity test credentials."
+
+  unity_tests:
+    name: Unity release tests
+    needs:
+      - prepare
+      - unity_availability
+    if: >-
+      needs.prepare.outputs.changed == 'true' &&
+      needs.unity_availability.outputs.available == 'true'
+    uses: ./.github/workflows/unity-tests.yml
+    with:
+      ref: ${{ needs.prepare.outputs.candidate_sha }}
+    secrets: inherit
+
+  python_tests:
+    name: Python release tests
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    uses: ./.github/workflows/python-tests.yml
+    with:
+      ref: ${{ needs.prepare.outputs.candidate_sha }}
+
+  publish:
+    name: Publish the VPM release
+    needs:
+      - prepare
+      - python_tests
+      - unity_availability
+      - unity_tests
+    if: >-
+      always() &&
+      needs.prepare.outputs.changed == 'true' &&
+      needs.python_tests.result == 'success' &&
+      needs.unity_availability.result == 'success' &&
+      (needs.unity_availability.outputs.available != 'true' ||
+      needs.unity_tests.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the validated release snapshot
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.candidate_sha }}
+
+      - name: Build and validate the VPM archive
+        id: package
+        shell: pwsh
+        run: ./.github/vpm/scripts/build-package.ps1 -Revision "${{ needs.prepare.outputs.candidate_sha }}"
+
+      - name: Stage the embedded Unity package
+        id: unitypackage
+        env:
+          PACKAGE_NAME: ${{ steps.package.outputs.package_name }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+          ZIP_PATH: ${{ steps.package.outputs.zip_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          unitypackage_name="${PACKAGE_NAME}-${PACKAGE_VERSION}.unitypackage"
+          project_path="$RUNNER_TEMP/unity-project"
+          package_path="$project_path/Packages/$PACKAGE_NAME"
+          mkdir -p "$package_path"
+          unzip -q "$ZIP_PATH" -d "$package_path"
+          (
+            cd "$project_path"
+            find "Packages/$PACKAGE_NAME" -type f -name '*.meta' -print \
+              | LC_ALL=C sort > metaList
+          )
+          test -s "$project_path/metaList"
+          echo "name=$unitypackage_name" >> "$GITHUB_OUTPUT"
+          echo "path=$project_path/$unitypackage_name" >> "$GITHUB_OUTPUT"
+          echo "project_path=$project_path" >> "$GITHUB_OUTPUT"
+
+      - name: Build the UnityPackage archive
+        uses: pCYSl5EDgo/create-unitypackage@b5c57408698b1fab8b3a84d4b67f767b8b7c0be9 # v1.2.3
+        with:
+          working-folder: ${{ steps.unitypackage.outputs.project_path }}
+          project-folder: .
+          package-path: ${{ steps.unitypackage.outputs.name }}
+          include-files: metaList
+
       - name: Publish the GitHub release
         env:
-          ARTIFACT_NAME: ${{ steps.package.outputs.artifact_name }}
-          DISPLAY_NAME: ${{ steps.package.outputs.display_name }}
+          CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
           GH_TOKEN: ${{ github.token }}
+          MANIFEST_PATH: ${{ steps.package.outputs.manifest_path }}
           PACKAGE_VERSION: ${{ steps.package.outputs.version }}
           RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          UPSTREAM_SHA: ${{ needs.prepare.outputs.upstream_sha }}
+          UPSTREAM_TAG: ${{ needs.prepare.outputs.upstream_tag }}
+          UNITYPACKAGE_PATH: ${{ steps.unitypackage.outputs.path }}
           ZIP_PATH: ${{ steps.package.outputs.zip_path }}
         shell: bash
         run: |
           set -euo pipefail
 
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG was published by another run."
+            exit 0
+          fi
+
+          printf -v release_notes \
+            'VPM distribution of upstream %s with the VRCLearn fork localization.\n\n- Upstream source: `%s`\n- Release snapshot: `%s`\n\nSource authorship and the MIT license remain with CoplayDev and the upstream contributors.\n\n<!-- upstream-source:%s -->\n<!-- release-source:%s -->' \
+            "$UPSTREAM_TAG" "$UPSTREAM_SHA" "$CANDIDATE_SHA" "$UPSTREAM_SHA" "$CANDIDATE_SHA"
+
           gh release create "$RELEASE_TAG" \
-            "$ZIP_PATH#$ARTIFACT_NAME" \
-            --target "$GITHUB_SHA" \
-            --title "$DISPLAY_NAME $PACKAGE_VERSION" \
-            --notes "VPM distribution of MCP for Unity $PACKAGE_VERSION from the VRCLearn fork. Source authorship and the MIT license remain with CoplayDev and the upstream contributors."
+            "$ZIP_PATH" \
+            "$UNITYPACKAGE_PATH" \
+            "$MANIFEST_PATH" \
+            --target "$CANDIDATE_SHA" \
+            --title "$PACKAGE_VERSION" \
+            --notes "$release_notes"
 
       - name: Refresh the VPM repository listing
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
-        run: gh workflow run vpm-listing.yml --ref main
+        run: |
+          gh workflow run vpm-listing.yml --ref main
+          gh workflow run vpm-release.yml --ref main
+
+  cleanup:
+    name: Remove the temporary release snapshot branch
+    needs:
+      - prepare
+      - publish
+    if: always() && needs.prepare.outputs.candidate_branch != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the temporary branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_BRANCH: ${{ needs.prepare.outputs.candidate_branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api \
+            --method DELETE \
+            "repos/${GITHUB_REPOSITORY}/git/refs/heads/${CANDIDATE_BRANCH}" \
+            >/dev/null 2>&1 || true
