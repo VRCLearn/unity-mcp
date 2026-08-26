@@ -24,8 +24,10 @@ jobs:
         shell: pwsh
         run: ./.github/vpm/scripts/build-package.ps1 -Revision "$env:GITHUB_SHA"
 
-      - name: Ensure the release is new
+      - name: Inspect the release state
+        id: release
         env:
+          ARTIFACT_NAME: ${{ steps.package.outputs.artifact_name }}
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.package.outputs.tag }}
         shell: bash
@@ -33,15 +35,29 @@ jobs:
           set -euo pipefail
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "Release $RELEASE_TAG already exists and is immutable." >&2
-            exit 1
+            assets="$(
+              gh release view "$RELEASE_TAG" \
+                --json assets \
+                --jq '.assets[].name'
+            )"
+            if grep -Fxq "$ARTIFACT_NAME" <<< "$assets"; then
+              echo "action=none" >> "$GITHUB_OUTPUT"
+              echo "Release $RELEASE_TAG is already complete."
+            else
+              echo "action=upload" >> "$GITHUB_OUTPUT"
+              echo "Release $RELEASE_TAG exists but is missing $ARTIFACT_NAME."
+            fi
+            exit 0
           fi
           if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "Tag $RELEASE_TAG already exists." >&2
+            echo "Tag $RELEASE_TAG exists without a GitHub release." >&2
             exit 1
           fi
 
+          echo "action=create" >> "$GITHUB_OUTPUT"
+
       - name: Publish the GitHub release
+        if: steps.release.outputs.action == 'create'
         env:
           ARTIFACT_NAME: ${{ steps.package.outputs.artifact_name }}
           DISPLAY_NAME: ${{ steps.package.outputs.display_name }}
@@ -58,6 +74,16 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "$DISPLAY_NAME $PACKAGE_VERSION" \
             --notes "VPM distribution of MCP for Unity $PACKAGE_VERSION from the VRCLearn fork. Source authorship and the MIT license remain with CoplayDev and the upstream contributors."
+
+      - name: Repair a missing release asset
+        if: steps.release.outputs.action == 'upload'
+        env:
+          ARTIFACT_NAME: ${{ steps.package.outputs.artifact_name }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          ZIP_PATH: ${{ steps.package.outputs.zip_path }}
+        shell: bash
+        run: gh release upload "$RELEASE_TAG" "$ZIP_PATH#$ARTIFACT_NAME"
 
       - name: Refresh the VPM repository listing
         env:

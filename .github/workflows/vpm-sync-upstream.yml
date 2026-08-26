@@ -1,0 +1,276 @@
+name: Sync stable upstream release
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vpm-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare upstream merge
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      base_sha: ${{ steps.sync.outputs.base_sha }}
+      changed: ${{ steps.sync.outputs.changed }}
+      latest_tag: ${{ steps.sync.outputs.latest_tag }}
+      sync_branch: ${{ steps.sync.outputs.sync_branch }}
+      sync_sha: ${{ steps.sync.outputs.sync_sha }}
+    steps:
+      - name: Check out the fork
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Merge the latest stable upstream release
+        id: sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_sha="$(git rev-parse HEAD)"
+          latest_tag="$(gh api repos/CoplayDev/unity-mcp/releases/latest --jq .tag_name)"
+
+          if ! [[ "$latest_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Unexpected upstream stable release tag: $latest_tag" >&2
+            exit 1
+          fi
+
+          git remote add upstream https://github.com/CoplayDev/unity-mcp.git
+          release_ref="refs/remotes/upstream/stable-release"
+          git fetch --force --no-tags upstream "refs/tags/${latest_tag}:${release_ref}"
+          release_commit="$(git rev-parse "${release_ref}^{commit}")"
+
+          echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+
+          if git merge-base --is-ancestor "$release_commit" HEAD; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "sync_branch=" >> "$GITHUB_OUTPUT"
+            echo "sync_sha=$base_sha" >> "$GITHUB_OUTPUT"
+            echo "The fork already contains upstream $latest_tag."
+            exit 0
+          fi
+
+          merge_base="$(git merge-base HEAD "$release_commit")"
+          protected_changes="$(
+            git diff --name-only "$merge_base" "$release_commit" -- \
+              .github/vpm \
+              .github/workflows/vpm-listing.yml \
+              .github/workflows/vpm-release.yml \
+              .github/workflows/vpm-report-failures.yml \
+              .github/workflows/vpm-sync-upstream.yml \
+              .github/workflows/vpm-validate.yml \
+              VPM.md
+          )"
+          if [[ -n "$protected_changes" ]]; then
+            echo "Upstream changed fork-owned VPM automation paths:" >&2
+            echo "$protected_changes" >&2
+            echo "Review the upstream release manually before synchronization." >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-edit "$release_commit"
+          git diff --check "$base_sha"..HEAD -- . ':(exclude,glob)**/*.meta'
+
+          sync_branch="automation/upstream-${latest_tag}-${RUN_ID}"
+          sync_sha="$(git rev-parse HEAD)"
+          git push origin "HEAD:refs/heads/${sync_branch}"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "sync_branch=$sync_branch" >> "$GITHUB_OUTPUT"
+          echo "sync_sha=$sync_sha" >> "$GITHUB_OUTPUT"
+          echo "Prepared $latest_tag as $sync_sha on $sync_branch."
+
+      - name: Validate localization coverage
+        if: steps.sync.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/vpm/scripts/validate-localization.ps1
+
+      - name: Build and validate the candidate VPM archive
+        if: steps.sync.outputs.changed == 'true'
+        shell: pwsh
+        run: ./.github/vpm/scripts/build-package.ps1 -Revision "${{ steps.sync.outputs.sync_sha }}"
+
+      - name: Keep scheduled synchronization active
+        if: github.event_name == 'schedule' && steps.sync.outputs.changed == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          now="$(date +%s)"
+          last_commit="$(git log -1 --format=%ct)"
+          maximum_idle_seconds="$((45 * 24 * 60 * 60))"
+          if (( now - last_commit < maximum_idle_seconds )); then
+            echo "The repository has been active within the last 45 days."
+            exit 0
+          fi
+
+          date -u +'%Y-%m-%dT%H:%M:%SZ' > .github/keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive
+          git commit -m "Keep scheduled upstream synchronization active"
+          git push origin HEAD:main
+
+  unity_availability:
+    name: Detect Unity test credentials
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.detect.outputs.available }}
+    steps:
+      - name: Detect Unity test credentials
+        id: detect
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -n "$UNITY_LICENSE" ]] || \
+             { [[ -n "$UNITY_EMAIL" ]] && [[ -n "$UNITY_PASSWORD" ]] && [[ -n "$UNITY_SERIAL" ]]; }; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Unity test credentials are configured."
+            exit 0
+          fi
+
+          echo "available=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::Unity tests will be skipped because the repository has no Unity test credentials. VPM packaging, localization validation, and Python tests still gate promotion."
+
+  unity_tests:
+    name: Unity tests gate
+    needs:
+      - prepare
+      - unity_availability
+    if: >-
+      needs.prepare.outputs.changed == 'true' &&
+      needs.unity_availability.outputs.available == 'true'
+    uses: ./.github/workflows/unity-tests.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sync_sha }}
+    secrets: inherit
+
+  python_tests:
+    name: Python tests gate
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    uses: ./.github/workflows/python-tests.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sync_sha }}
+
+  promote:
+    name: Promote validated upstream merge
+    needs:
+      - prepare
+      - python_tests
+      - unity_availability
+      - unity_tests
+    if: >-
+      always() &&
+      needs.prepare.outputs.changed == 'true' &&
+      needs.python_tests.result == 'success' &&
+      needs.unity_availability.result == 'success' &&
+      (needs.unity_availability.outputs.available != 'true' ||
+      needs.unity_tests.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the validated merge
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare.outputs.sync_sha }}
+
+      - name: Fast-forward main
+        env:
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin main
+          current_main="$(git rev-parse origin/main)"
+          if [[ "$current_main" != "$BASE_SHA" ]]; then
+            echo "main changed while the upstream candidate was tested." >&2
+            echo "Expected $BASE_SHA but found $current_main. Retry synchronization." >&2
+            exit 1
+          fi
+
+          git push origin HEAD:main
+
+  release:
+    name: Publish VPM release when needed
+    needs:
+      - prepare
+      - promote
+    if: >-
+      always() &&
+      (needs.prepare.outputs.changed == 'false' || needs.promote.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - name: Dispatch a missing VPM release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(jq -r '.version' MCPForUnity/package.json)"
+          release_tag="vpm-${version}"
+          if gh release view "$release_tag" >/dev/null 2>&1; then
+            echo "VPM release $release_tag already exists."
+            exit 0
+          fi
+
+          gh workflow run vpm-release.yml --ref main
+          echo "Dispatched VPM release $release_tag."
+
+  cleanup:
+    name: Remove temporary synchronization branch
+    needs:
+      - prepare
+      - promote
+    if: always() && needs.prepare.outputs.sync_branch != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete the temporary branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SYNC_BRANCH: ${{ needs.prepare.outputs.sync_branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api \
+            --method DELETE \
+            "repos/${GITHUB_REPOSITORY}/git/refs/heads/${SYNC_BRANCH}" \
+            >/dev/null 2>&1 || true

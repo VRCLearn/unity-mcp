@@ -33,6 +33,10 @@ jobs:
       - name: Check out the fork
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Validate localization coverage
+        shell: pwsh
+        run: ./.github/vpm/scripts/validate-localization.ps1
+
       - name: Build and validate the VPM archive
         shell: pwsh
         run: ./.github/vpm/scripts/build-package.ps1 -Revision "$env:GITHUB_SHA"

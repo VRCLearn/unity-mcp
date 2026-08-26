@@ -38,6 +38,23 @@ are immutable.
 Any fork change intended for release must receive a new stable version across
 all three files. An existing release archive is never overwritten.
 
+## Automated upstream updates
+
+The fork checks the latest stable CoplayDev GitHub release every hour. A new
+upstream release is merged into a temporary branch, packaged, and tested before
+the validated merge is promoted to `main`. The matching VPM release and
+repository listing are then published automatically.
+
+Prereleases and the upstream `beta` branch are intentionally ignored. Merge
+conflicts, test failures, and packaging failures stop promotion and create a
+GitHub issue for maintainer review. The issue closes automatically after the
+affected workflow recovers.
+
+If Unity test credentials are configured, automatic promotion also runs the
+upstream Unity test workflow. Without those optional secrets, synchronization
+uses the stable upstream release as its compatibility baseline and still
+requires VPM packaging, localization validation, and Python tests to pass.
+
 ## Generated package metadata
 
 The release script puts the contents of `MCPForUnity/` at the ZIP root. During
