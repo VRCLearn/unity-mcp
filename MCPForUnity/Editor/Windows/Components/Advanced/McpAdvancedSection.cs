@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using MCPForUnity.Editor.Constants;
@@ -18,6 +19,7 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
     {
         // UI Elements
         private TextField uvxPathOverride;
+        private DropdownField languageDropdown;
         private Button browseUvxButton;
         private Button clearUvxButton;
         private VisualElement uvxPathStatus;
@@ -63,6 +65,7 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
 
         private void CacheUIElements()
         {
+            languageDropdown = Root.Q<DropdownField>("language-dropdown");
             uvxPathOverride = Root.Q<TextField>("uv-path-override");
             browseUvxButton = Root.Q<Button>("browse-uv-button");
             clearUvxButton = Root.Q<Button>("clear-uv-button");
@@ -94,83 +97,90 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
 
         private void InitializeUI()
         {
+            if (languageDropdown != null)
+            {
+                languageDropdown.choices = new List<string>(EditorLocalization.AvailableLanguageLabels);
+                languageDropdown.SetValueWithoutNotify(
+                    EditorLocalization.GetLanguageLabel(EditorLocalization.CurrentLanguage)
+                );
+            }
+
             // Set tooltips for fields
             if (uvxPathOverride != null)
-                uvxPathOverride.tooltip = "Override path to uvx executable. Leave empty for auto-detection.";
+                uvxPathOverride.tooltip = EditorLocalization.Text("Override path to uvx executable. Leave empty for auto-detection.");
             if (gitUrlOverride != null)
-                gitUrlOverride.tooltip = "Override server source for uvx --from. Leave empty to use default PyPI package. Example local dev: /path/to/unity-mcp/Server";
+                gitUrlOverride.tooltip = EditorLocalization.Text("Override server source for uvx --from. Leave empty to use default PyPI package. Example local dev: /path/to/unity-mcp/Server");
             if (debugLogsToggle != null)
             {
-                debugLogsToggle.tooltip = "Enable verbose debug logging to the Unity Console.";
+                debugLogsToggle.tooltip = EditorLocalization.Text("Enable verbose debug logging to the Unity Console.");
                 var debugLabel = debugLogsToggle?.parent?.Q<Label>();
                 if (debugLabel != null)
                     debugLabel.tooltip = debugLogsToggle.tooltip;
             }
             if (logRecordToggle != null)
             {
-                logRecordToggle.tooltip = "Log every MCP tool execution (tool, action, status, duration) to Assets/UnityMCP/Log/mcp.log.";
+                logRecordToggle.tooltip = EditorLocalization.Text("Log every MCP tool execution (tool, action, status, duration) to Assets/UnityMCP/Log/mcp.log.");
                 var logRecordLabel = logRecordToggle?.parent?.Q<Label>();
                 if (logRecordLabel != null)
                     logRecordLabel.tooltip = logRecordToggle.tooltip;
             }
             if (devModeForceRefreshToggle != null)
             {
-                devModeForceRefreshToggle.tooltip = "When enabled, generated uvx commands add '--no-cache --refresh' before launching (slower startup, but avoids stale cached builds while iterating on the Server).";
+                devModeForceRefreshToggle.tooltip = EditorLocalization.Text("When enabled, generated uvx commands add '--no-cache --refresh' before launching (slower startup, but avoids stale cached builds while iterating on the Server).");
                 var forceRefreshLabel = devModeForceRefreshToggle?.parent?.Q<Label>();
                 if (forceRefreshLabel != null)
                     forceRefreshLabel.tooltip = devModeForceRefreshToggle.tooltip;
             }
             if (allowLanHttpBindToggle != null)
             {
-                allowLanHttpBindToggle.tooltip = "Allow HTTP Local to bind on all interfaces (0.0.0.0 / ::). Disabled by default because devices on your LAN may reach MCP tools.";
+                allowLanHttpBindToggle.tooltip = EditorLocalization.Text("Allow HTTP Local to bind on all interfaces (0.0.0.0 / ::). Disabled by default because devices on your LAN may reach MCP tools.");
                 var lanBindLabel = allowLanHttpBindToggle?.parent?.Q<Label>();
                 if (lanBindLabel != null)
                     lanBindLabel.tooltip = allowLanHttpBindToggle.tooltip;
             }
             if (allowInsecureRemoteHttpToggle != null)
             {
-                allowInsecureRemoteHttpToggle.tooltip = "Allow HTTP Remote over plaintext http/ws. Disabled by default to require HTTPS/WSS.";
+                allowInsecureRemoteHttpToggle.tooltip = EditorLocalization.Text("Allow HTTP Remote over plaintext http/ws. Disabled by default to require HTTPS/WSS.");
                 var insecureRemoteLabel = allowInsecureRemoteHttpToggle?.parent?.Q<Label>();
                 if (insecureRemoteLabel != null)
                     insecureRemoteLabel.tooltip = allowInsecureRemoteHttpToggle.tooltip;
             }
             if (testConnectionButton != null)
-                testConnectionButton.tooltip = "Test the connection between Unity and the MCP server.";
+                testConnectionButton.tooltip = EditorLocalization.Text("Test the connection between Unity and the MCP server.");
             if (screenshotsFolderOverride != null)
             {
-                screenshotsFolderOverride.tooltip = "Default folder for screenshots from manage_camera / manage_ui. " +
-                    "Project-relative (e.g. 'Assets/Screenshots' or 'Captures'). Empty = built-in default (Assets/Screenshots). " +
-                    "Per-call 'output_folder' parameters always override this.";
+                screenshotsFolderOverride.tooltip = EditorLocalization.Text(
+                    "Default folder for screenshots from manage_camera / manage_ui. Project-relative (e.g. 'Assets/Screenshots' or 'Captures'). Empty = built-in default (Assets/Screenshots). Per-call 'output_folder' parameters always override this.");
                 screenshotsFolderOverride.SetValueWithoutNotify(ScreenshotPreferences.DefaultFolder);
             }
             if (browseScreenshotsFolderButton != null)
-                browseScreenshotsFolderButton.tooltip = "Pick a folder inside the project; the path is stored project-relative.";
+                browseScreenshotsFolderButton.tooltip = EditorLocalization.Text("Pick a folder inside the project; the path is stored project-relative.");
             if (clearScreenshotsFolderButton != null)
-                clearScreenshotsFolderButton.tooltip = "Clear override and use the built-in default (Assets/Screenshots).";
+                clearScreenshotsFolderButton.tooltip = EditorLocalization.Text("Clear override and use the built-in default (Assets/Screenshots).");
             if (deploySourcePath != null)
-                deploySourcePath.tooltip = "Copy a MCPForUnity folder into this project's package location.";
+                deploySourcePath.tooltip = EditorLocalization.Text("Copy a MCPForUnity folder into this project's package location.");
 
             // Set tooltips for buttons
             if (browseUvxButton != null)
-                browseUvxButton.tooltip = "Browse for uvx executable";
+                browseUvxButton.tooltip = EditorLocalization.Text("Browse for uvx executable");
             if (clearUvxButton != null)
-                clearUvxButton.tooltip = "Clear override and use auto-detection";
+                clearUvxButton.tooltip = EditorLocalization.Text("Clear override and use auto-detection");
             if (browseGitUrlButton != null)
-                browseGitUrlButton.tooltip = "Select local server source folder";
+                browseGitUrlButton.tooltip = EditorLocalization.Text("Select local server source folder");
             if (clearGitUrlButton != null)
-                clearGitUrlButton.tooltip = "Clear override and use default PyPI package";
+                clearGitUrlButton.tooltip = EditorLocalization.Text("Clear override and use default PyPI package");
             if (browseDeploySourceButton != null)
-                browseDeploySourceButton.tooltip = "Select MCPForUnity source folder";
+                browseDeploySourceButton.tooltip = EditorLocalization.Text("Select MCPForUnity source folder");
             if (clearDeploySourceButton != null)
-                clearDeploySourceButton.tooltip = "Clear deployment source path";
+                clearDeploySourceButton.tooltip = EditorLocalization.Text("Clear deployment source path");
             if (deployButton != null)
-                deployButton.tooltip = "Copy MCPForUnity to this project's package location";
+                deployButton.tooltip = EditorLocalization.Text("Copy MCPForUnity to this project's package location");
             if (deployRestoreButton != null)
-                deployRestoreButton.tooltip = "Restore the last backup before deployment";
+                deployRestoreButton.tooltip = EditorLocalization.Text("Restore the last backup before deployment");
 
             if (autoStartOnLoadToggle != null)
             {
-                autoStartOnLoadToggle.tooltip = "Automatically start the local HTTP server and connect the MCP bridge when the Unity Editor opens. Only applies to HTTP transport (stdio always auto-starts).";
+                autoStartOnLoadToggle.tooltip = EditorLocalization.Text("Automatically start the local HTTP server and connect the MCP bridge when the Unity Editor opens. Only applies to HTTP transport (stdio always auto-starts).");
                 var autoStartLabel = autoStartOnLoadToggle.parent?.Q<Label>();
                 if (autoStartLabel != null)
                     autoStartLabel.tooltip = autoStartOnLoadToggle.tooltip;
@@ -197,10 +207,23 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
             }
             UpdatePathOverrides();
             UpdateDeploymentSection();
+            EditorLocalization.LocalizeTree(Root);
         }
 
         private void RegisterCallbacks()
         {
+            if (languageDropdown != null)
+            {
+                languageDropdown.RegisterValueChangedCallback(evt =>
+                {
+                    int selected = languageDropdown.choices.IndexOf(evt.newValue);
+                    if (selected >= 0)
+                    {
+                        EditorLocalization.SetLanguage((EditorLanguage)selected);
+                    }
+                });
+            }
+
             browseUvxButton.clicked += OnBrowseUvxClicked;
             clearUvxButton.clicked += OnClearUvxClicked;
             browseGitUrlButton.clicked += OnBrowseGitUrlClicked;
@@ -293,7 +316,7 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
                 }
                 catch (Exception ex)
                 {
-                    EditorUtility.DisplayDialog("Invalid Source", ex.Message, "OK");
+                    EditorLocalization.DisplayDialog("Invalid Source", ex.Message, "OK");
                     UpdateDeploymentSection();
                 }
             });
@@ -340,7 +363,11 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
                 {
                     // Override path invalid, using system fallback
                     string overridePath = EditorPrefs.GetString(EditorPrefKeys.UvxPathOverride, string.Empty);
-                    uvxPathOverride.value = $"Invalid override path: {overridePath} (fallback to uvx path) {uvxPath}";
+                    uvxPathOverride.value = EditorLocalization.Format(
+                        "Invalid override path: {0} (fallback to uvx path) {1}",
+                        overridePath,
+                        uvxPath
+                    );
                 }
                 else if (!string.IsNullOrEmpty(uvxPath))
                 {
@@ -351,12 +378,15 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
                 {
                     // Override set but invalid, no fallback available
                     string overridePath = EditorPrefs.GetString(EditorPrefKeys.UvxPathOverride, string.Empty);
-                    uvxPathOverride.value = $"Invalid override path: {overridePath}, no uv found";
+                    uvxPathOverride.value = EditorLocalization.Format(
+                        "Invalid override path: {0}, no uv found",
+                        overridePath
+                    );
                 }
             }
             else
             {
-                uvxPathOverride.value = "uvx (uses PATH)";
+                uvxPathOverride.value = EditorLocalization.Text("uvx (uses PATH)");
             }
 
             uvxPathStatus.RemoveFromClassList("valid");
@@ -421,7 +451,7 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
             string suggested = RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
                 ? "/opt/homebrew/bin"
                 : Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            string picked = EditorUtility.OpenFilePanel("Select uv Executable", suggested, "");
+            string picked = EditorUtility.OpenFilePanel(EditorLocalization.Text("Select uv Executable"), suggested, "");
             if (!string.IsNullOrEmpty(picked))
             {
                 try
@@ -432,7 +462,7 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
                 }
                 catch (Exception ex)
                 {
-                    EditorUtility.DisplayDialog("Invalid Path", ex.Message, "OK");
+                    EditorLocalization.DisplayDialog("Invalid Path", ex.Message, "OK");
                 }
             }
         }
@@ -446,7 +476,11 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
 
         private void OnBrowseGitUrlClicked()
         {
-            string picked = EditorUtility.OpenFolderPanel("Select Server folder (containing pyproject.toml)", string.Empty, string.Empty);
+            string picked = EditorUtility.OpenFolderPanel(
+                EditorLocalization.Text("Select Server folder (containing pyproject.toml)"),
+                string.Empty,
+                string.Empty
+            );
             if (!string.IsNullOrEmpty(picked))
             {
                 picked = ResolveServerPath(picked);
@@ -513,17 +547,23 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
             string sourcePath = deployService.GetStoredSourcePath();
             deploySourcePath.value = sourcePath ?? string.Empty;
 
-            deployTargetLabel.text = $"Target: {deployService.GetTargetDisplayPath()}";
+            deployTargetLabel.text = EditorLocalization.Format(
+                "Target: {0}",
+                deployService.GetTargetDisplayPath()
+            );
 
             string backupPath = deployService.GetLastBackupPath();
             if (deployService.HasBackup())
             {
                 // Use forward slashes to avoid backslash escape sequence issues in UI text
-                deployBackupLabel.text = $"Last backup: {backupPath?.Replace('\\', '/')}";
+                deployBackupLabel.text = EditorLocalization.Format(
+                    "Last backup: {0}",
+                    backupPath?.Replace('\\', '/')
+                );
             }
             else
             {
-                deployBackupLabel.text = "Last backup: none";
+                deployBackupLabel.text = EditorLocalization.Text("Last backup: none");
             }
 
             deployRestoreButton?.SetEnabled(deployService.HasBackup());
@@ -533,7 +573,11 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
         {
             // Start the picker at the project's Assets/ since that's the most common target.
             string startDir = UnityEngine.Application.dataPath;
-            string picked = EditorUtility.OpenFolderPanel("Select Screenshots Folder (inside this project)", startDir, string.Empty);
+            string picked = EditorUtility.OpenFolderPanel(
+                EditorLocalization.Text("Select Screenshots Folder (inside this project)"),
+                startDir,
+                string.Empty
+            );
             if (string.IsNullOrEmpty(picked))
             {
                 return;
@@ -547,7 +591,7 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
             {
                 // Storing "" would wipe the EditorPrefs key (= "unset"), so reject the project
                 // root rather than silently revert the override the user just chose.
-                EditorUtility.DisplayDialog(
+                EditorLocalization.DisplayDialog(
                     "Pick a Subfolder",
                     "Please pick a subfolder of the project (for example 'Assets/Screenshots' or 'Captures'). " +
                     "Selecting the project root would mix screenshots in with your project files.",
@@ -557,9 +601,13 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
 
             if (!normalizedPicked.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             {
-                EditorUtility.DisplayDialog(
+                EditorLocalization.DisplayDialog(
                     "Folder Outside Project",
-                    $"The selected folder is outside the Unity project root.\n\nPicked: {normalizedPicked}\nProject: {projectRoot}\n\nPlease pick a folder inside the project.",
+                    EditorLocalization.Format(
+                        "The selected folder is outside the Unity project root.\n\nPicked: {0}\nProject: {1}\n\nPlease pick a folder inside the project.",
+                        normalizedPicked,
+                        projectRoot
+                    ),
                     "OK");
                 return;
             }
@@ -573,7 +621,11 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
 
         private void OnBrowseDeploySourceClicked()
         {
-            string picked = EditorUtility.OpenFolderPanel("Select MCPForUnity folder", string.Empty, string.Empty);
+            string picked = EditorUtility.OpenFolderPanel(
+                EditorLocalization.Text("Select MCPForUnity folder"),
+                string.Empty,
+                string.Empty
+            );
             if (string.IsNullOrEmpty(picked))
             {
                 return;
@@ -582,12 +634,12 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
             try
             {
                 MCPServiceLocator.Deployment.SetStoredSourcePath(picked);
-                SetDeployStatus($"Source set: {picked}");
+                SetDeployStatus(EditorLocalization.Format("Source set: {0}", picked));
             }
             catch (Exception ex)
             {
-                EditorUtility.DisplayDialog("Invalid Source", ex.Message, "OK");
-                SetDeployStatus("Source selection failed");
+                EditorLocalization.DisplayDialog("Invalid Source", ex.Message, "OK");
+                SetDeployStatus(EditorLocalization.Text("Source selection failed"));
             }
 
             UpdateDeploymentSection();
@@ -597,7 +649,7 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
         {
             MCPServiceLocator.Deployment.ClearStoredSourcePath();
             UpdateDeploymentSection();
-            SetDeployStatus("Source cleared");
+            SetDeployStatus(EditorLocalization.Text("Source cleared"));
         }
 
         private void OnDeployClicked()
@@ -607,11 +659,19 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
 
             if (!result.Success)
             {
-                EditorUtility.DisplayDialog("Deployment Failed", result.Message, "OK");
+                EditorLocalization.DisplayDialog("Deployment Failed", result.Message, "OK");
             }
             else
             {
-                EditorUtility.DisplayDialog("Deployment Complete", result.Message + (string.IsNullOrEmpty(result.BackupPath) ? string.Empty : $"\nBackup: {result.BackupPath}"), "OK");
+                EditorLocalization.DisplayDialog(
+                    "Deployment Complete",
+                    EditorLocalization.Text(result.Message) + (
+                        string.IsNullOrEmpty(result.BackupPath)
+                            ? string.Empty
+                            : EditorLocalization.Format("\nBackup: {0}", result.BackupPath)
+                    ),
+                    "OK"
+                );
                 OnPackageDeployed?.Invoke();
             }
 
@@ -625,11 +685,11 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
 
             if (!result.Success)
             {
-                EditorUtility.DisplayDialog("Restore Failed", result.Message, "OK");
+                EditorLocalization.DisplayDialog("Restore Failed", result.Message, "OK");
             }
             else
             {
-                EditorUtility.DisplayDialog("Restore Complete", result.Message, "OK");
+                EditorLocalization.DisplayDialog("Restore Complete", result.Message, "OK");
                 OnPackageDeployed?.Invoke();
             }
 
@@ -643,7 +703,7 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
                 return;
             }
 
-            deployStatusLabel.text = message;
+            deployStatusLabel.text = EditorLocalization.Text(message);
             deployStatusLabel.style.color = isError
                 ? new StyleColor(new Color(0.85f, 0.2f, 0.2f))
                 : StyleKeyword.Null;
@@ -653,7 +713,7 @@ namespace MCPForUnity.Editor.Windows.Components.Advanced
         {
             if (healthStatus != null)
             {
-                healthStatus.text = statusText;
+                healthStatus.text = EditorLocalization.Text(statusText);
             }
 
             if (healthIndicator != null)

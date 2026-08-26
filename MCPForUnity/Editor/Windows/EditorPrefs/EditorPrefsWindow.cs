@@ -48,6 +48,7 @@ namespace MCPForUnity.Editor.Windows
             // Integer prefs
             { EditorPrefKeys.UnitySocketPort, EditorPrefType.Int },
             { EditorPrefKeys.ValidationLevel, EditorPrefType.Int },
+            { EditorPrefKeys.EditorLanguage, EditorPrefType.Int },
             { EditorPrefKeys.LastUpdateCheck, EditorPrefType.String },
             { EditorPrefKeys.LastStdIoUpgradeVersion, EditorPrefType.Int },
             { EditorPrefKeys.LastLocalHttpServerPid, EditorPrefType.Int },
@@ -120,7 +121,9 @@ namespace MCPForUnity.Editor.Windows
                 return;
             }
 
+            rootVisualElement.Clear();
             visualTree.CloneTree(rootVisualElement);
+            EditorLocalization.LocalizeTree(rootVisualElement);
 
             // Add search bar container at the top
             var searchContainer = new VisualElement();
@@ -130,7 +133,7 @@ namespace MCPForUnity.Editor.Windows
             searchContainer.style.marginLeft = 4;
             searchContainer.style.marginRight = 4;
 
-            searchField = new TextField("Search");
+            searchField = new TextField(EditorLocalization.Text("Search"));
             searchField.style.flexGrow = 1;
             searchField.style.height = 28;
             searchField.style.paddingTop = 2;
@@ -144,7 +147,7 @@ namespace MCPForUnity.Editor.Windows
 
             var refreshButton = new Button(RefreshPrefs);
             refreshButton.text = "↻";
-            refreshButton.tooltip = "Refresh prefs";
+            refreshButton.tooltip = EditorLocalization.Text("Refresh prefs");
             refreshButton.style.width = 30;
             refreshButton.style.height = 28;
             refreshButton.style.marginLeft = 6;
@@ -163,6 +166,28 @@ namespace MCPForUnity.Editor.Windows
 
             // Load initial data
             RefreshPrefs();
+        }
+
+        private void OnEnable()
+        {
+            EditorLocalization.LanguageChanged += OnLanguageChanged;
+        }
+
+        private void OnDisable()
+        {
+            EditorLocalization.LanguageChanged -= OnLanguageChanged;
+        }
+
+        private void OnLanguageChanged()
+        {
+            EditorApplication.delayCall += () =>
+            {
+                if (this != null)
+                {
+                    CreateGUI();
+                    Repaint();
+                }
+            };
         }
 
         private void LoadKnownMcpKeys()
@@ -319,6 +344,7 @@ namespace MCPForUnity.Editor.Windows
             }
 
             var itemElement = itemTemplate.CloneTree();
+            EditorLocalization.LocalizeTree(itemElement);
 
             // Set values
             itemElement.Q<Label>("key-label").text = item.Key;
@@ -365,7 +391,11 @@ namespace MCPForUnity.Editor.Windows
                     }
                     else
                     {
-                        EditorUtility.DisplayDialog("Error", $"Cannot convert '{value}' to int", "OK");
+                        EditorLocalization.DisplayDialog(
+                            "Error",
+                            EditorLocalization.Format("Cannot convert '{0}' to int", value),
+                            "OK"
+                        );
                         return;
                     }
                     break;
@@ -376,7 +406,11 @@ namespace MCPForUnity.Editor.Windows
                     }
                     else
                     {
-                        EditorUtility.DisplayDialog("Error", $"Cannot convert '{value}' to float", "OK");
+                        EditorLocalization.DisplayDialog(
+                            "Error",
+                            EditorLocalization.Format("Cannot convert '{0}' to float", value),
+                            "OK"
+                        );
                         return;
                     }
                     break;
@@ -387,7 +421,14 @@ namespace MCPForUnity.Editor.Windows
                     }
                     else
                     {
-                        EditorUtility.DisplayDialog("Error", $"Cannot convert '{value}' to bool (use 'True' or 'False')", "OK");
+                        EditorLocalization.DisplayDialog(
+                            "Error",
+                            EditorLocalization.Format(
+                                "Cannot convert '{0}' to bool (use 'True' or 'False')",
+                                value
+                            ),
+                            "OK"
+                        );
                         return;
                     }
                     break;

@@ -78,7 +78,9 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
                     EditorPrefKeys.ProjectScopedToolsLocalHttp,
                     false
                 );
-                projectScopedToolsToggle.tooltip = "When enabled, register project-scoped tools with HTTP Local and stdio transports. Allows per-project tool customization.";
+                projectScopedToolsToggle.tooltip = EditorLocalization.Text(
+                    "When enabled, register project-scoped tools with HTTP Local and stdio transports. Allows per-project tool customization."
+                );
                 projectScopedToolsToggle.RegisterValueChangedCallback(evt =>
                 {
                     EditorPrefs.SetBool(EditorPrefKeys.ProjectScopedToolsLocalHttp, evt.newValue);
@@ -145,9 +147,9 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
                 if (hasTools)
                 {
                     bool isHttp = EditorConfigurationCache.Instance.UseHttpTransport;
-                    noteLabel.text = isHttp
+                    noteLabel.text = EditorLocalization.Text(isHttp
                         ? "Changes apply after reconnecting or re-registering tools."
-                        : "Stdio mode: toggles sync at startup. After changing toggles, ask the AI to run manage_tools with action 'sync' to refresh.";
+                        : "Stdio mode: toggles sync at startup. After changing toggles, ask the AI to run manage_tools with action 'sync' to refresh.");
                 }
             }
 
@@ -182,7 +184,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
             // Custom tools at the bottom
             if (customTools.Count > 0)
             {
-                BuildCategory("Custom Tools", "custom", customTools);
+                BuildCategory(EditorLocalization.Text("Custom Tools"), "custom", customTools);
             }
 
             UpdateSummary();
@@ -191,10 +193,10 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
         private static string GetGroupDisplayName(string group)
         {
             if (GroupDisplayNames.TryGetValue(group, out var displayName))
-                return displayName;
+                return EditorLocalization.Text(displayName);
             // Fallback: capitalize first letter
             return string.IsNullOrEmpty(group)
-                ? "Other"
+                ? EditorLocalization.Text("Other")
                 : char.ToUpper(group[0]) + group.Substring(1);
         }
 
@@ -214,7 +216,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
             bool defaultOpen = prefsSuffix == "group-core";
             var foldout = new Foldout
             {
-                text = $"{title} ({enabledCount}/{toolList.Count})",
+                text = EditorLocalization.Format("{0} ({1}/{2})", title, enabledCount, toolList.Count),
                 value = EditorPrefs.GetBool(EditorPrefKeys.ToolFoldoutStatePrefix + prefsSuffix, defaultOpen)
             };
 
@@ -228,7 +230,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
             bool allEnabled = enabledCount == toolList.Count;
             var groupCheckbox = new Toggle { value = allEnabled };
             groupCheckbox.AddToClassList("group-header-checkbox");
-            groupCheckbox.tooltip = $"Toggle all tools in \"{title}\" on or off.";
+            groupCheckbox.tooltip = EditorLocalization.Format("Toggle all tools in \"{0}\" on or off.", title);
 
             // Prevent the click from propagating to the foldout expand/collapse toggle
             groupCheckbox.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
@@ -250,9 +252,9 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
             if (isExperimental)
             {
                 var warning = new HelpBox(
-                    "ProBuilder support is experimental. Mesh editing operations may produce " +
-                    "unexpected results on complex topologies. Always save your scene before " +
-                    "performing destructive operations.",
+                    EditorLocalization.Text(
+                        "ProBuilder support is experimental. Mesh editing operations may produce unexpected results on complex topologies. Always save your scene before performing destructive operations."
+                    ),
                     HelpBoxMessageType.Warning);
                 warning.style.marginTop = 4;
                 warning.style.marginBottom = 2;
@@ -296,7 +298,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             if (tool.RequiresPolling)
             {
-                tagsContainer.Add(CreateTag($"Polling: {tool.PollAction}"));
+                tagsContainer.Add(CreateTag(EditorLocalization.Format("Polling: {0}", tool.PollAction)));
             }
 
             header.Add(tagsContainer);
@@ -445,7 +447,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             // Update the foldout header count
             int enabledCount = groupTools.Count(t => MCPServiceLocator.ToolDiscovery.IsToolEnabled(t.Name));
-            foldout.text = $"{title} ({enabledCount}/{groupTools.Count})";
+            foldout.text = EditorLocalization.Format("{0} ({1}/{2})", title, enabledCount, groupTools.Count);
 
             // Sync global group toggles after group change
             SyncGroupToggles();
@@ -532,7 +534,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
                         }
 
                         success++;
-                        messages.Add($"✓ {client.DisplayName}: Reconfigured");
+                        messages.Add(EditorLocalization.Format("✓ {0}: Reconfigured", client.DisplayName));
                     }
                     catch (Exception ex)
                     {
@@ -540,16 +542,20 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
                     }
                 }
 
-                string header = $"Reconfigured {success} client(s), skipped {skipped}.";
+                string header = EditorLocalization.Format(
+                    "Reconfigured {0} client(s), skipped {1}.",
+                    success,
+                    skipped
+                );
                 string body = messages.Count > 0
                     ? header + "\n\n" + string.Join("\n", messages)
                     : header;
 
-                EditorUtility.DisplayDialog("Reconfigure Clients", body, "OK");
+                EditorLocalization.DisplayDialog("Reconfigure Clients", body, "OK");
             }
             catch (Exception ex)
             {
-                EditorUtility.DisplayDialog("Reconfigure Failed", ex.Message, "OK");
+                EditorLocalization.DisplayDialog("Reconfigure Failed", ex.Message, "OK");
                 McpLog.Error($"Reconfigure failed: {ex.Message}");
             }
         }
@@ -563,12 +569,16 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             if (allTools.Count == 0)
             {
-                summaryLabel.text = "No MCP tools discovered.";
+                summaryLabel.text = EditorLocalization.Text("No MCP tools discovered.");
                 return;
             }
 
             int enabledCount = allTools.Count(tool => MCPServiceLocator.ToolDiscovery.IsToolEnabled(tool.Name));
-            summaryLabel.text = $"{enabledCount} of {allTools.Count} tools will register with connected clients.";
+            summaryLabel.text = EditorLocalization.Format(
+                "{0} of {1} tools will register with connected clients.",
+                enabledCount,
+                allTools.Count
+            );
         }
 
         private void UpdateFoldoutHeaders()
@@ -576,13 +586,13 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
             foreach (var (foldout, title, tools) in foldoutEntries)
             {
                 int enabledCount = tools.Count(t => MCPServiceLocator.ToolDiscovery.IsToolEnabled(t.Name));
-                foldout.text = $"{title} ({enabledCount}/{tools.Count})";
+                foldout.text = EditorLocalization.Format("{0} ({1}/{2})", title, enabledCount, tools.Count);
             }
         }
 
         private void AddInfoLabel(string message)
         {
-            var label = new Label(message);
+            var label = new Label(EditorLocalization.Text(message));
             label.AddToClassList("help-text");
             categoryContainer?.Add(label);
         }
@@ -594,31 +604,31 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             var gameViewButton = new Button(OnManageSceneScreenshotClicked)
             {
-                text = "Game View"
+                text = EditorLocalization.Text("Game View")
             };
             gameViewButton.AddToClassList("tool-action-button");
             gameViewButton.style.marginTop = 4;
-            gameViewButton.tooltip = "Capture a game camera screenshot. Default: Assets/Screenshots (configurable in Advanced).";
+            gameViewButton.tooltip = EditorLocalization.Text("Capture a game camera screenshot. Default: Assets/Screenshots (configurable in Advanced).");
 
             var sceneViewButton = new Button(OnSceneViewScreenshotClicked)
             {
-                text = "Scene View"
+                text = EditorLocalization.Text("Scene View")
             };
             sceneViewButton.AddToClassList("tool-action-button");
             sceneViewButton.style.marginTop = 4;
             sceneViewButton.style.marginLeft = 4;
-            sceneViewButton.tooltip = "Capture the active Scene View viewport. Default: Assets/Screenshots (configurable in Advanced).";
+            sceneViewButton.tooltip = EditorLocalization.Text("Capture the active Scene View viewport. Default: Assets/Screenshots (configurable in Advanced).");
 
             var multiviewButton = new Button(OnManageSceneMultiviewClicked)
             {
-                text = "Multiview"
+                text = EditorLocalization.Text("Multiview")
             };
             multiviewButton.AddToClassList("tool-action-button");
             multiviewButton.style.marginTop = 4;
             multiviewButton.style.marginLeft = 4;
-            multiviewButton.tooltip = "Capture a 6-angle contact sheet around the scene centre. Default: Assets/Screenshots (configurable in Advanced).";
+            multiviewButton.tooltip = EditorLocalization.Text("Capture a 6-angle contact sheet around the scene centre. Default: Assets/Screenshots (configurable in Advanced).");
 
-            var captureLabel = new Label("Capture:");
+            var captureLabel = new Label(EditorLocalization.Text("Capture:"));
             captureLabel.style.marginTop = 6;
             captureLabel.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
 
@@ -642,7 +652,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
             container.style.alignItems = Align.Center;
             container.style.marginTop = 4;
 
-            var label = new Label("Max commands per batch:");
+            var label = new Label(EditorLocalization.Text("Max commands per batch:"));
             label.style.marginRight = 8;
             label.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
             container.Add(label);
@@ -657,7 +667,11 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
                 value = Math.Clamp(currentValue, 1, BatchExecute.AbsoluteMaxCommandsPerBatch),
                 style = { width = 60 }
             };
-            field.tooltip = $"Number of commands allowed per batch_execute call (1–{BatchExecute.AbsoluteMaxCommandsPerBatch}). Default: {BatchExecute.DefaultMaxCommandsPerBatch}.";
+            field.tooltip = EditorLocalization.Format(
+                "Number of commands allowed per batch_execute call (1–{0}). Default: {1}.",
+                BatchExecute.AbsoluteMaxCommandsPerBatch,
+                BatchExecute.DefaultMaxCommandsPerBatch
+            );
 
             field.RegisterValueChangedCallback(evt =>
             {
@@ -671,7 +685,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             container.Add(field);
 
-            var hint = new Label($"(max {BatchExecute.AbsoluteMaxCommandsPerBatch})");
+            var hint = new Label(EditorLocalization.Format("(max {0})", BatchExecute.AbsoluteMaxCommandsPerBatch));
             hint.style.marginLeft = 4;
             hint.style.color = new UnityEngine.Color(0.5f, 0.5f, 0.5f);
             hint.style.fontSize = 10;
@@ -788,7 +802,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
         private static Label CreateTag(string text)
         {
-            var tag = new Label(text);
+            var tag = new Label(EditorLocalization.Text(text));
             tag.AddToClassList("tool-tag");
             return tag;
         }

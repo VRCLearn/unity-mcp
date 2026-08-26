@@ -202,18 +202,18 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
         {
             return status switch
             {
-                McpStatus.NotConfigured => "Not Configured",
-                McpStatus.Configured => "Configured",
-                McpStatus.Running => "Running",
-                McpStatus.Connected => "Connected",
-                McpStatus.IncorrectPath => "Incorrect Path",
-                McpStatus.CommunicationError => "Communication Error",
-                McpStatus.NoResponse => "No Response",
-                McpStatus.UnsupportedOS => "Unsupported OS",
-                McpStatus.MissingConfig => "Missing MCPForUnity Config",
-                McpStatus.Error => "Error",
-                McpStatus.VersionMismatch => "Version Mismatch",
-                _ => "Unknown",
+                McpStatus.NotConfigured => EditorLocalization.Text("Not Configured"),
+                McpStatus.Configured => EditorLocalization.Text("Configured"),
+                McpStatus.Running => EditorLocalization.Text("Running"),
+                McpStatus.Connected => EditorLocalization.Text("Connected"),
+                McpStatus.IncorrectPath => EditorLocalization.Text("Incorrect Path"),
+                McpStatus.CommunicationError => EditorLocalization.Text("Communication Error"),
+                McpStatus.NoResponse => EditorLocalization.Text("No Response"),
+                McpStatus.UnsupportedOS => EditorLocalization.Text("Unsupported OS"),
+                McpStatus.MissingConfig => EditorLocalization.Text("Missing MCPForUnity Config"),
+                McpStatus.Error => EditorLocalization.Text("Error"),
+                McpStatus.VersionMismatch => EditorLocalization.Text("Version Mismatch"),
+                _ => EditorLocalization.Text("Unknown"),
             };
         }
 
@@ -233,12 +233,12 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
             var steps = client.GetInstallationSteps();
             if (steps != null && steps.Count > 0)
             {
-                var numbered = steps.Select((s, i) => $"{i + 1}. {s}");
+                var numbered = steps.Select((s, i) => $"{i + 1}. {EditorLocalization.Text(s)}");
                 installationStepsLabel.text = string.Join("\n", numbered);
             }
             else
             {
-                installationStepsLabel.text = "Configuration steps not available for this client.";
+                installationStepsLabel.text = EditorLocalization.Text("Configuration steps not available for this client.");
             }
         }
 
@@ -255,7 +255,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
                 if (string.IsNullOrEmpty(claudePath))
                 {
                     claudeCliPathRow.style.display = DisplayStyle.Flex;
-                    claudeCliPath.value = "Not found - click Browse to select";
+                    claudeCliPath.value = EditorLocalization.Text("Not found - click Browse to select");
                 }
                 else
                 {
@@ -282,7 +282,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
                 string projectDir = ClaudeCliMcpConfigurator.GetClientProjectDir();
                 if (ClaudeCliMcpConfigurator.HasClientProjectDirOverride)
                 {
-                    clientProjectDirField.value = projectDir + "  (override)";
+                    clientProjectDirField.value = projectDir + EditorLocalization.Text("  (override)");
                 }
                 else
                 {
@@ -302,15 +302,24 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
                 var summary = MCPServiceLocator.Client.ConfigureAllDetectedClients();
 
                 string headline = summary.SkippedCount > 0
-                    ? $"{summary.SuccessCount + summary.FailureCount} detected client(s) processed. ({summary.SkippedCount} not installed, skipped.)"
-                    : summary.GetSummaryMessage();
+                    ? EditorLocalization.Format(
+                        "{0} detected client(s) processed. ({1} not installed, skipped.)",
+                        summary.SuccessCount + summary.FailureCount,
+                        summary.SkippedCount
+                    )
+                    : EditorLocalization.Format(
+                        "✓ {0} configured, ⚠ {1} failed, ➜ {2} skipped",
+                        summary.SuccessCount,
+                        summary.FailureCount,
+                        summary.SkippedCount
+                    );
                 string message = headline + "\n\n";
                 foreach (var msg in summary.Messages)
                 {
-                    message += msg + "\n";
+                    message += EditorLocalization.Text(msg) + "\n";
                 }
 
-                EditorUtility.DisplayDialog("Configure Detected Clients", message, "OK");
+                EditorLocalization.DisplayDialog("Configure Detected Clients", message, "OK");
 
                 // The bulk path mutated state for every detected client. Clear the per-client
                 // status cache so any subsequent dropdown switch (or the currently-selected
@@ -327,7 +336,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
             }
             catch (Exception ex)
             {
-                EditorUtility.DisplayDialog("Configuration Failed", ex.Message, "OK");
+                EditorLocalization.DisplayDialog("Configuration Failed", ex.Message, "OK");
             }
         }
 
@@ -365,10 +374,10 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
             }
             catch (Exception ex)
             {
-                clientStatusLabel.text = "Error";
+                clientStatusLabel.text = EditorLocalization.Text("Error");
                 clientStatusLabel.style.color = Color.red;
                 McpLog.Error($"Configuration failed: {ex.Message}");
-                EditorUtility.DisplayDialog("Configuration Failed", ex.Message, "OK");
+                EditorLocalization.DisplayDialog("Configuration Failed", ex.Message, "OK");
             }
         }
 
@@ -379,7 +388,13 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
 
             statusRefreshInFlight.Add(client);
             bool isCurrentlyConfigured = client.Status == McpStatus.Configured;
-            ApplyStatusToUi(client, showChecking: true, customMessage: isCurrentlyConfigured ? "Unregistering..." : "Configuring...");
+            ApplyStatusToUi(
+                client,
+                showChecking: true,
+                customMessage: EditorLocalization.Text(
+                    isCurrentlyConfigured ? "Unregistering..." : "Configuring..."
+                )
+            );
 
             // Capture ALL main-thread-only values before async task
             string projectDir = ClaudeCliMcpConfigurator.GetClientProjectDir();
@@ -494,28 +509,36 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
 
             isSkillSyncInProgress = true;
             installSkillsButton.SetEnabled(false);
-            installSkillsButton.text = "Syncing...";
+            installSkillsButton.text = EditorLocalization.Text("Syncing...");
 
             SkillSyncService.SyncAsync(installPath, branch, null, result =>
                 {
                     isSkillSyncInProgress = false;
                     installSkillsButton.SetEnabled(true);
-                    installSkillsButton.text = "Install Skills";
+                    installSkillsButton.text = EditorLocalization.Text("Install Skills");
 
                     if (result.Success)
                     {
                         bool noChanges = result.Added == 0 && result.Updated == 0 && result.Deleted == 0;
                         string summary = noChanges
-                            ? "Skills are already up to date."
-                            : $"Added: {result.Added}, Updated: {result.Updated}, Deleted: {result.Deleted}";
+                            ? EditorLocalization.Text("Skills are already up to date.")
+                            : EditorLocalization.Format(
+                                "Added: {0}, Updated: {1}, Deleted: {2}",
+                                result.Added,
+                                result.Updated,
+                                result.Deleted
+                            );
                         McpLog.Info($"SkillSync complete: {summary} ({installPath})");
-                        EditorUtility.DisplayDialog("Install Skills",
-                            $"{summary}\n\nInstalled at: {installPath}", "OK");
+                        EditorLocalization.DisplayDialog(
+                            "Install Skills",
+                            EditorLocalization.Format("{0}\n\nInstalled at: {1}", summary, installPath),
+                            "OK"
+                        );
                     }
                     else
                     {
                         McpLog.Error($"SkillSync failed: {result.Error}");
-                        EditorUtility.DisplayDialog("Install Skills Failed", result.Error, "OK");
+                        EditorLocalization.DisplayDialog("Install Skills Failed", result.Error, "OK");
                     }
                 });
         }
@@ -525,7 +548,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
             string suggested = RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
                 ? "/opt/homebrew/bin"
                 : Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            string picked = EditorUtility.OpenFilePanel("Select Claude CLI", suggested, "");
+            string picked = EditorUtility.OpenFilePanel(EditorLocalization.Text("Select Claude CLI"), suggested, "");
             if (!string.IsNullOrEmpty(picked))
             {
                 try
@@ -537,7 +560,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
                 }
                 catch (Exception ex)
                 {
-                    EditorUtility.DisplayDialog("Invalid Path", ex.Message, "OK");
+                    EditorLocalization.DisplayDialog("Invalid Path", ex.Message, "OK");
                 }
             }
         }
@@ -545,12 +568,16 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
         private void OnBrowseProjectDirClicked()
         {
             string currentDir = ClaudeCliMcpConfigurator.GetClientProjectDir();
-            string picked = EditorUtility.OpenFolderPanel("Select Client Project Directory", currentDir, "");
+            string picked = EditorUtility.OpenFolderPanel(
+                EditorLocalization.Text("Select Client Project Directory"),
+                currentDir,
+                ""
+            );
             if (!string.IsNullOrEmpty(picked))
             {
                 if (!Directory.Exists(picked))
                 {
-                    EditorUtility.DisplayDialog("Invalid Path", "The selected directory does not exist.", "OK");
+                    EditorLocalization.DisplayDialog("Invalid Path", "The selected directory does not exist.", "OK");
                     return;
                 }
                 EditorPrefs.SetString(EditorPrefKeys.ClientProjectDirOverride, picked);
@@ -581,7 +608,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
             {
                 if (!File.Exists(path))
                 {
-                    EditorUtility.DisplayDialog("Open File", "The configuration file path does not exist.", "OK");
+                    EditorLocalization.DisplayDialog("Open File", "The configuration file path does not exist.", "OK");
                     return;
                 }
 
@@ -724,10 +751,10 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
 
             if (showChecking)
             {
-                clientStatusLabel.text = customMessage ?? "Checking...";
+                clientStatusLabel.text = EditorLocalization.Text(customMessage ?? "Checking...");
                 clientStatusLabel.style.color = StyleKeyword.Null;
                 clientStatusIndicator.AddToClassList("warning");
-                configureButton.text = client.GetConfigureActionLabel();
+                configureButton.text = EditorLocalization.Text(client.GetConfigureActionLabel());
                 return;
             }
 
@@ -745,7 +772,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
             // If configured but with transport mismatch, show warning state
             if (hasTransportMismatch && (client.Status == McpStatus.Configured || client.Status == McpStatus.Running || client.Status == McpStatus.Connected))
             {
-                clientStatusLabel.text = "Transport Mismatch";
+                clientStatusLabel.text = EditorLocalization.Text("Transport Mismatch");
                 clientStatusIndicator.AddToClassList("warning");
             }
             else
@@ -773,7 +800,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
             }
 
             clientStatusLabel.style.color = StyleKeyword.Null;
-            configureButton.text = client.GetConfigureActionLabel();
+            configureButton.text = EditorLocalization.Text(client.GetConfigureActionLabel());
 
             // Notify listeners about the client's configured transport
             OnClientTransportDetected?.Invoke(client.DisplayName, client.ConfiguredTransport);

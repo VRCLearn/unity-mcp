@@ -76,18 +76,20 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
             if (formatDropdown != null)
             {
                 formatDropdown.choices = new List<string> { "glb", "fbx", "obj" };
-                formatDropdown.tooltip = "Default container format for generated 3D models.";
+                formatDropdown.tooltip = EditorLocalization.Text("Default container format for generated 3D models.");
             }
 
             if (outputRootField != null)
             {
-                outputRootField.tooltip =
-                    $"Project-relative folder where generated assets are written. Empty = {AssetGenPrefs.DefaultOutputRoot}.";
+                outputRootField.tooltip = EditorLocalization.Format(
+                    "Project-relative folder where generated assets are written. Empty = {0}.",
+                    AssetGenPrefs.DefaultOutputRoot);
             }
 
             if (autoNormalizeToggle != null)
             {
-                autoNormalizeToggle.tooltip = "Uniformly scale imported models to the target size on import.";
+                autoNormalizeToggle.tooltip = EditorLocalization.Text(
+                    "Uniformly scale imported models to the target size on import.");
             }
 
             SyncFromPrefs();
@@ -123,9 +125,8 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
 
             if (refreshButton != null)
             {
-                refreshButton.tooltip =
-                    "Re-check API-key presence and rebuild the provider/model rows. Picks up keys or " +
-                    "prefs set elsewhere (CLI, env override). The model list is curated in-package.";
+                refreshButton.tooltip = EditorLocalization.Text(
+                    "Re-check API-key presence and rebuild the provider/model rows. Picks up keys or prefs set elsewhere (CLI, env override). The model list is curated in-package.");
                 refreshButton.clicked += OnRefreshClicked;
             }
         }
@@ -139,7 +140,8 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
         {
             SyncFromPrefs();
             if (refreshStatusLabel != null)
-                SetStatus(refreshStatusLabel, "refreshed — using the built-in model catalog", true);
+                SetStatus(refreshStatusLabel, EditorLocalization.Text(
+                    "refreshed — using the built-in model catalog"), true);
         }
 
         /// <summary>
@@ -156,6 +158,7 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
             outputRootField?.SetValueWithoutNotify(AssetGenPrefs.OutputRoot);
             autoNormalizeToggle?.SetValueWithoutNotify(AssetGenPrefs.AutoNormalize);
             UpdateGltfastNotice();
+            EditorLocalization.LocalizeTree(Root);
         }
 
         private void BuildProviderRows()
@@ -205,7 +208,7 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
             panel.style.borderBottomLeftRadius = 4;
             panel.style.borderBottomRightRadius = 4;
 
-            var label = new Label(title);
+            var label = new Label(EditorLocalization.Text(title));
             label.AddToClassList("config-label");
             label.style.marginTop = 0;
             panel.Add(label);
@@ -216,7 +219,7 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
 
         private void AddGroupLabel(string text)
         {
-            var label = new Label(text);
+            var label = new Label(EditorLocalization.Text(text));
             label.AddToClassList("config-label");
             providersContainer.Add(label);
         }
@@ -234,15 +237,14 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
             row.style.marginBottom = 8;
 
             bool blender = BlenderDetection.IsInstalled();
-            var status = new Label(blender ? "Blender app detected ✓" : "Blender app not found on this machine");
+            var status = new Label(EditorLocalization.Text(
+                blender ? "Blender app detected ✓" : "Blender app not found on this machine"));
             status.AddToClassList("help-text");
             status.style.color = blender ? new Color(0.4f, 0.8f, 0.4f) : new Color(0.7f, 0.7f, 0.7f);
             row.Add(status);
 
-            var help = new Label(
-                "Pair Blender with the BlenderMCP server in your AI client, then run the blender-to-unity " +
-                "skill to export the current model — it imports via the import_model_file tool. (BlenderMCP " +
-                "is configured in your AI client and can't be detected here.)");
+            var help = new Label(EditorLocalization.Text(
+                "Pair Blender with the BlenderMCP server in your AI client, then run the blender-to-unity skill to export the current model — it imports via the import_model_file tool. (BlenderMCP is configured in your AI client and can't be detected here.)"));
             help.AddToClassList("help-text");
             help.style.whiteSpace = WhiteSpace.Normal;
             row.Add(help);
@@ -276,9 +278,10 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
             statusLabel.style.marginLeft = 8;
             header.Add(statusLabel);
 
-            var enableToggle = new Toggle("Enabled");
+            var enableToggle = new Toggle(EditorLocalization.Text("Enabled"));
             enableToggle.SetValueWithoutNotify(AssetGenPrefs.IsProviderEnabled(id));
-            enableToggle.tooltip = $"Enable the {displayName} provider for asset generation.";
+            enableToggle.tooltip = EditorLocalization.Format(
+                "Enable the {0} provider for asset generation.", displayName);
             header.Add(enableToggle);
 
             row.Add(header);
@@ -294,20 +297,20 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
             keyField.style.flexGrow = 1;
             keyField.style.flexShrink = 1;
             keyField.style.marginRight = 4;
-            keyField.tooltip =
-                $"Paste your {displayName} API key, then press Save (or click away). " +
-                "The key is stored in your OS secure store and is never read back into this field.";
+            keyField.tooltip = EditorLocalization.Format(
+                "Paste your {0} API key, then press Save (or click away). The key is stored in your OS secure store and is never read back into this field.",
+                displayName);
             fieldRow.Add(keyField);
 
-            var saveButton = new Button { text = "Save" };
+            var saveButton = new Button { text = EditorLocalization.Text("Save") };
             saveButton.AddToClassList("icon-button");
             fieldRow.Add(saveButton);
 
-            var clearButton = new Button { text = "Clear" };
+            var clearButton = new Button { text = EditorLocalization.Text("Clear") };
             clearButton.AddToClassList("icon-button");
             fieldRow.Add(clearButton);
 
-            var testButton = new Button { text = "Test" };
+            var testButton = new Button { text = EditorLocalization.Text("Test") };
             testButton.AddToClassList("icon-button");
             fieldRow.Add(testButton);
 
@@ -326,13 +329,13 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
                 {
                     SecureKeyStore.Current.Set(id, text);
                     keyField.SetValueWithoutNotify(string.Empty);
-                    SetStatus(statusLabel, "saved ✓", true);
+                    SetStatus(statusLabel, EditorLocalization.Text("saved ✓"), true);
                     RebuildIfSharedKey(id);
                 }
                 catch (Exception ex)
                 {
                     McpLog.Warn($"Failed to store {id} key: {ex.Message}");
-                    SetStatus(statusLabel, "save failed", false);
+                    SetStatus(statusLabel, EditorLocalization.Text("save failed"), false);
                 }
             }
 
@@ -351,7 +354,7 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
                 }
 
                 keyField.SetValueWithoutNotify(string.Empty);
-                SetStatus(statusLabel, "not set", false);
+                SetStatus(statusLabel, EditorLocalization.Text("not set"), false);
                 RebuildIfSharedKey(id);
             };
 
@@ -360,7 +363,8 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
             testButton.clicked += () =>
             {
                 bool present = HasKey(id);
-                SetStatus(statusLabel, present ? "key present ✓" : "no key set", present);
+                SetStatus(statusLabel, EditorLocalization.Text(
+                    present ? "key present ✓" : "no key set"), present);
             };
 
             enableToggle.RegisterValueChangedCallback(evt =>
@@ -371,7 +375,7 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
 
             // Initial status reflects secure-store presence (existence only; never the value).
             bool has = HasKey(id);
-            SetStatus(statusLabel, has ? "saved ✓" : "not set", has);
+            SetStatus(statusLabel, EditorLocalization.Text(has ? "saved ✓" : "not set"), has);
 
             // "Which model" selector for this provider (skipped for providers with no catalog
             // models, e.g. the Sketchfab marketplace).
@@ -413,13 +417,14 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
             var dropdownRow = new VisualElement();
             dropdownRow.AddToClassList("setting-row");
 
-            var modelLabel = new Label("Model");
+            var modelLabel = new Label(EditorLocalization.Text("Model"));
             modelLabel.AddToClassList("setting-label");
             dropdownRow.Add(modelLabel);
 
             var dropdown = new DropdownField(choices, 0);
             dropdown.AddToClassList("setting-dropdown-inline");
-            dropdown.tooltip = "The model generate_* uses for this provider when no explicit model is passed.";
+            dropdown.tooltip = EditorLocalization.Text(
+                "The model generate_* uses for this provider when no explicit model is passed.");
             dropdown.SetValueWithoutNotify(selected.Label);
             dropdownRow.Add(dropdown);
 
@@ -473,7 +478,8 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
             header.Add(nameLabel);
 
             bool hasFal = HasKey("fal");
-            var status = new Label(hasFal ? "key present ✓ (shared with 2D fal)" : "no fal key — set it in 2D Images");
+            var status = new Label(EditorLocalization.Text(
+                hasFal ? "key present ✓ (shared with 2D fal)" : "no fal key — set it in 2D Images"));
             status.AddToClassList("help-text");
             status.style.color = hasFal ? new Color(0.4f, 0.8f, 0.4f) : new Color(0.7f, 0.7f, 0.7f);
             status.style.flexGrow = 1;
@@ -510,12 +516,12 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
         {
             if (label == null || m == null) return;
             var parts = new List<string>();
-            if (!string.IsNullOrEmpty(m.UseCase)) parts.Add(m.UseCase);
+            if (!string.IsNullOrEmpty(m.UseCase)) parts.Add(EditorLocalization.Text(m.UseCase));
             if (!string.IsNullOrEmpty(m.PriceLabel)) parts.Add(m.PriceLabel);
             // Only surface the "≤Ns" hint for models with an actual duration control (DurationField);
             // Lyria advertises a max but takes no duration input, so showing a hint would mislead.
             if (m.MaxDurationSeconds > 0f && !string.IsNullOrEmpty(m.DurationField)) parts.Add($"≤{m.MaxDurationSeconds:0}s");
-            if (m.Loopable) parts.Add("loopable");
+            if (m.Loopable) parts.Add(EditorLocalization.Text("loopable"));
             label.text = string.Join(" · ", parts);
         }
 
@@ -523,7 +529,7 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
         {
             if (label == null) return;
             bool show = m != null && !string.IsNullOrEmpty(m.CommercialNote);
-            label.text = show ? m.CommercialNote : string.Empty;
+            label.text = show ? EditorLocalization.Text(m.CommercialNote) : string.Empty;
             label.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
@@ -534,7 +540,7 @@ namespace MCPForUnity.Editor.Windows.Components.AssetGen
                 return;
             }
 
-            label.text = text;
+            label.text = EditorLocalization.Text(text);
             label.style.color = ok
                 ? new Color(0.4f, 0.8f, 0.4f)
                 : new Color(0.7f, 0.7f, 0.7f);

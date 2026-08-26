@@ -49,7 +49,7 @@ namespace MCPForUnity.Editor.Windows
 
         public static void ShowWindow(DependencyCheckResult dependencyResult = null)
         {
-            var window = GetWindow<MCPSetupWindow>("MCP Setup");
+            var window = GetWindow<MCPSetupWindow>(EditorLocalization.Text("MCP Setup"));
             window.minSize = new Vector2(480, 320);
             window._dependencyResult = dependencyResult ?? DependencyManager.CheckAllDependencies();
             window.Show();
@@ -57,6 +57,7 @@ namespace MCPForUnity.Editor.Windows
 
         public void CreateGUI()
         {
+            titleContent = new GUIContent(EditorLocalization.Text("MCP Setup"));
             string basePath = AssetPathUtility.GetMcpPackageRootPath();
 
             // Load UXML
@@ -70,7 +71,9 @@ namespace MCPForUnity.Editor.Windows
                 return;
             }
 
+            rootVisualElement.Clear();
             visualTree.CloneTree(rootVisualElement);
+            EditorLocalization.LocalizeTree(rootVisualElement);
 
             // Embed the Ocean brand mark beside the title
             var setupHeader = rootVisualElement.Q<VisualElement>("setup-header");
@@ -117,6 +120,7 @@ namespace MCPForUnity.Editor.Windows
 
         private void OnEnable()
         {
+            EditorLocalization.LanguageChanged += OnLanguageChanged;
             if (_dependencyResult == null)
             {
                 _dependencyResult = DependencyManager.CheckAllDependencies();
@@ -173,7 +177,9 @@ namespace MCPForUnity.Editor.Windows
             }
             if (clientToggles.Count == 0)
             {
-                clientsList.Add(new Label("No supported MCP clients detected on this machine. You can configure clients later from Tools → MCP for Unity."));
+                clientsList.Add(new Label(EditorLocalization.Text(
+                    "No supported MCP clients detected on this machine. You can configure clients later from Tools → MCP for Unity."
+                )));
                 configureSelectedButton.SetEnabled(false);
             }
         }
@@ -204,7 +210,7 @@ namespace MCPForUnity.Editor.Windows
             }
             if (success == 0 && failure == 0)
             {
-                EditorUtility.DisplayDialog(
+                EditorLocalization.DisplayDialog(
                     "Client Configuration",
                     "No clients were selected. Tick at least one client to continue, or close the window to skip setup.",
                     "OK");
@@ -214,11 +220,19 @@ namespace MCPForUnity.Editor.Windows
             // no need to enumerate every successfully-configured client.
             string failureList = failures.Count > 0 ? "\n\n" + string.Join("\n", failures) : "";
             string nextStep = (failure == 0 && success > 0)
-                ? "\n\nYou're all set. Ask your AI assistant to create a GameObject in the open scene to confirm the connection."
+                ? "\n\n" + EditorLocalization.Text(
+                    "You're all set. Ask your AI assistant to create a GameObject in the open scene to confirm the connection."
+                )
                 : "";
-            EditorUtility.DisplayDialog(
+            EditorLocalization.DisplayDialog(
                 "Client Configuration",
-                $"{success} configured, {failure} failed.{failureList}{nextStep}",
+                EditorLocalization.Format(
+                    "{0} configured, {1} failed.{2}{3}",
+                    success,
+                    failure,
+                    failureList,
+                    nextStep
+                ),
                 "OK");
             Setup.SetupWindowService.MarkSetupCompleted();
             Close();
@@ -240,18 +254,19 @@ namespace MCPForUnity.Editor.Windows
         {
             if (_uvInstallTask != null) return; // already running
 
-            bool proceed = EditorUtility.DisplayDialog(
+            bool proceed = EditorLocalization.DisplayDialog(
                 "Install UV",
-                "This will download and run the official uv installer:\n\n" +
-                UvInstaller.DescribeCommand() +
-                "\n\nContinue?",
+                EditorLocalization.Format(
+                    "This will download and run the official uv installer:\n\n{0}\n\nContinue?",
+                    UvInstaller.DescribeCommand()
+                ),
                 "Install",
                 "Cancel");
             if (!proceed) return;
 
             installUvButton.SetEnabled(false);
-            installUvButton.text = "Installing UV…";
-            statusMessage.text = "Installing uv… this can take a moment.";
+            installUvButton.text = EditorLocalization.Text("Installing UV…");
+            statusMessage.text = EditorLocalization.Text("Installing uv… this can take a moment.");
             statusMessage.style.color = new StyleColor(new Color(1f, 0.6f, 0f));
 
             _uvInstallTask = Task.Run(() => UvInstaller.Run());
@@ -274,7 +289,7 @@ namespace MCPForUnity.Editor.Windows
             _uvInstallTask = null;
 
             installUvButton.SetEnabled(true);
-            installUvButton.text = "Install UV Automatically";
+            installUvButton.text = EditorLocalization.Text("Install UV Automatically");
 
             // UvInstaller.Run catches its own exceptions, so the task always completes with a result.
             UvInstaller.UvInstallResult result = task.Result;
@@ -285,10 +300,12 @@ namespace MCPForUnity.Editor.Windows
                 UpdateUI();
                 if (!_dependencyResult.IsSystemReady)
                 {
-                    EditorUtility.DisplayDialog(
+                    EditorLocalization.DisplayDialog(
                         "Install UV",
-                        "uv installed, but it isn't visible on PATH yet. Restart Unity (or your terminal) so it picks up the new PATH, then click Refresh.\n\n" +
-                        result.Output,
+                        EditorLocalization.Format(
+                            "uv installed, but it isn't visible on PATH yet. Restart Unity (or your terminal) so it picks up the new PATH, then click Refresh.\n\n{0}",
+                            result.Output
+                        ),
                         "OK");
                 }
             }
@@ -296,10 +313,12 @@ namespace MCPForUnity.Editor.Windows
             {
                 // Reset the status label off the "Installing…" state before reporting the failure.
                 UpdateUI();
-                EditorUtility.DisplayDialog(
+                EditorLocalization.DisplayDialog(
                     "Install UV Failed",
-                    "The installer did not complete successfully. You can install uv manually via \"Open UV Install Page\".\n\n" +
-                    result.Output,
+                    EditorLocalization.Format(
+                        "The installer did not complete successfully. You can install uv manually via \"Open UV Install Page\".\n\n{0}",
+                        result.Output
+                    ),
                     "OK");
             }
         }
@@ -307,6 +326,19 @@ namespace MCPForUnity.Editor.Windows
         private void OnDisable()
         {
             EditorApplication.update -= PollUvInstall;
+            EditorLocalization.LanguageChanged -= OnLanguageChanged;
+        }
+
+        private void OnLanguageChanged()
+        {
+            EditorApplication.delayCall += () =>
+            {
+                if (this != null)
+                {
+                    CreateGUI();
+                    Repaint();
+                }
+            };
         }
 
         private void UpdateUI()
@@ -339,17 +371,20 @@ namespace MCPForUnity.Editor.Windows
             // Update overall status
             if (_dependencyResult.IsSystemReady)
             {
-                statusMessage.text = "✓ All requirements met! MCP for Unity is ready to use.";
+                statusMessage.text = EditorLocalization.Text("✓ All requirements met! MCP for Unity is ready to use.");
                 statusMessage.style.color = new StyleColor(Color.green);
                 installationSection.style.display = DisplayStyle.None;
             }
             else
             {
-                statusMessage.text = "⚠ Missing dependencies. MCP for Unity requires all dependencies to function.";
+                statusMessage.text = EditorLocalization.Text("⚠ Missing dependencies. MCP for Unity requires all dependencies to function.");
                 statusMessage.style.color = new StyleColor(new Color(1f, 0.6f, 0f)); // Orange
                 installationSection.style.display = DisplayStyle.Flex;
-                installationInstructions.text = DependencyManager.GetInstallationRecommendations();
+                installationInstructions.text = EditorLocalization.TextMultiline(
+                    DependencyManager.GetInstallationRecommendations());
             }
+
+            EditorLocalization.LocalizeTree(rootVisualElement);
         }
 
         private void UpdateDependencyStatus(VisualElement indicator, Label versionLabel, Label detailsLabel, DependencyStatus dep)
@@ -359,15 +394,15 @@ namespace MCPForUnity.Editor.Windows
                 indicator.RemoveFromClassList("invalid");
                 indicator.AddToClassList("valid");
                 versionLabel.text = $"v{dep.Version}";
-                detailsLabel.text = dep.Details ?? "Available";
+                detailsLabel.text = EditorLocalization.Text(dep.Details ?? "Available");
                 detailsLabel.style.color = new StyleColor(Color.gray);
             }
             else
             {
                 indicator.RemoveFromClassList("valid");
                 indicator.AddToClassList("invalid");
-                versionLabel.text = "Not Found";
-                detailsLabel.text = dep.ErrorMessage ?? "Not available";
+                versionLabel.text = EditorLocalization.Text("Not Found");
+                detailsLabel.text = EditorLocalization.Text(dep.ErrorMessage ?? "Not available");
                 detailsLabel.style.color = new StyleColor(Color.red);
             }
         }
