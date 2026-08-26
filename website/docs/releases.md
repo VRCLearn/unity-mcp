@@ -15,7 +15,97 @@ For the canonical changelog with PR links, see [GitHub Releases](https://github.
 > Auto-generated from the GitHub Releases API by `tools/sync_release_notes.py`. Do not hand-edit — changes will be overwritten on the next sync.
 
 
+## v10.1 series
+
+### [v10.1.2](https://github.com/CoplayDev/unity-mcp/releases/tag/v10.1.2) — 2026-08-02
+
+<details>
+<summary>Show release notes</summary>
+
+## What's Changed
+* chore: sync main (v10.1.0) into beta by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1271
+* test: report unavailable-pipeline graphics tests as Skipped, not Inconclusive by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1294
+* fix: repair dead camera CLI, add run_tests clear_stuck (#1272), refresh uv.lock by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1293
+* fix: advertise Codex as stdio-only (#1193) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1292
+* fix: redirect stdin from NUL when launching the server on Windows (#1279) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1290
+* fix: trust the pipeline flag when a domain reload is deferred (#1276) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1291
+* chore: update Unity package to beta version 10.1.1-beta.2 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1296
+* docs: fix typos in v8 migration guide by @ananttheant in https://github.com/CoplayDev/unity-mcp/pull/1281
+* fix: restore HTTP transport for Codex (#1193) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1305
+* chore: update Unity package to beta version 10.1.1-beta.3 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1306
+* fix: stop 34 tools forcing an approval prompt on every call (#1288) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1304
+* chore: update Unity package to beta version 10.1.1-beta.4 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1307
+* fix(server): address resources by URI in agent-facing prose by @KamilDev in https://github.com/CoplayDev/unity-mcp/pull/1302
+* ci: retire safe-to-test gate, make skipped Unity checks visible by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1308
+* chore: update Unity package to beta version 10.1.1-beta.5 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1309
+* fix: make component properties reachable on manage_gameobject create by @asavs in https://github.com/CoplayDev/unity-mcp/pull/1298
+* chore: update Unity package to beta version 10.1.1-beta.6 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1310
+* chore: bump version to 10.1.2 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1312
+
+## New Contributors
+* @ananttheant made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1281
+* @asavs made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1298
+
+**Full Changelog**: https://github.com/CoplayDev/unity-mcp/compare/v10.1.0...v10.1.2
+
+</details>
+
+### [v10.1.0](https://github.com/CoplayDev/unity-mcp/releases/tag/v10.1.0) — 2026-07-13
+
+<details>
+<summary>Show release notes</summary>
+
+## What's Changed
+* chore: sync main (v10.0.2) into beta by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1268
+* feat(asset-gen): AI audio generation + shared model panel (hardened) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1264
+* chore: update Unity package to beta version 10.0.3-beta.2 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1269
+* chore: bump version to 10.1.0 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1270
+
+**Full Changelog**: https://github.com/CoplayDev/unity-mcp/compare/v10.0.2...v10.1.0
+
+</details>
+
+
 ## v10.0 series
+
+### [v10.0.2](https://github.com/CoplayDev/unity-mcp/releases/tag/v10.0.2) — 2026-07-13
+
+<details>
+<summary>Show release notes</summary>
+
+## What's Changed
+* chore: sync main (v10.0.0) into beta by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1225
+* feat(editor): embed Ocean brand mark in Editor UI + setup polish by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1231
+* chore: update Unity package to beta version 10.0.1-beta.2 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1233
+* fix(editor): skip shutdown cleanup in batch mode so CI instances don't stop the interactive server by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1235
+* chore: update Unity package to beta version 10.0.1-beta.3 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1242
+* fix(screenshot): restore pause state after composited capture by @KamilDev in https://github.com/CoplayDev/unity-mcp/pull/1230
+* fix: preserve multi-line message body in read_console by @GallopingDino in https://github.com/CoplayDev/unity-mcp/pull/1227
+* chore: update Unity package to beta version 10.0.1-beta.4 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1245
+* docs(server): guide agents to read resources by URI, not name by @Lothsahn in https://github.com/CoplayDev/unity-mcp/pull/1244
+* chore: update Unity package to beta version 10.0.1-beta.5 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1246
+* fix(server): stop silent cross-instance routing when multiple editors are connected (#1023) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1236
+* chore: update Unity package to beta version 10.0.1-beta.6 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1249
+* fix(manage_build): stop forcing PVRTC texture compression on Android via subtarget by @beast-ofcourse in https://github.com/CoplayDev/unity-mcp/pull/1253
+* chore: update Unity package to beta version 10.0.1-beta.7 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1257
+* fix: stop tearing down healthy HTTP sessions on transient probe misses (#1207) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1237
+* fix(editor): survive domain reloads in HTTP auto-start and reload-resume (#1229) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1234
+* chore: update Unity package to beta version 10.0.1-beta.8 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1259
+* fix(stdio): recover from a reload-orphaned socket instead of hanging by @mertakdut in https://github.com/CoplayDev/unity-mcp/pull/1217
+* chore: update Unity package to beta version 10.0.1-beta.9 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1260
+* feat(asset-gen): add animation_type rig mode to import_model_file by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1262
+* chore: update Unity package to beta version 10.0.1-beta.10 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1263
+* chore: bump version to 10.0.2 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1267
+
+## New Contributors
+* @GallopingDino made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1227
+* @Lothsahn made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1244
+* @beast-ofcourse made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1253
+* @mertakdut made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1217
+
+**Full Changelog**: https://github.com/CoplayDev/unity-mcp/compare/v10.0.0...v10.0.2
+
+</details>
 
 ### [v10.0.0](https://github.com/CoplayDev/unity-mcp/releases/tag/v10.0.0) — 2026-06-30
 
