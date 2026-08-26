@@ -101,12 +101,12 @@ namespace MCPForUnity.Editor.Windows.Components.Resources
                 return;
             }
 
-            BuildCategory("Built-in Resources", "built-in", allResources.Where(r => r.IsBuiltIn));
+            BuildCategory(EditorLocalization.Text("Built-in Resources"), "built-in", allResources.Where(r => r.IsBuiltIn));
 
             var customResources = allResources.Where(r => !r.IsBuiltIn).ToList();
             if (customResources.Count > 0)
             {
-                BuildCategory("Custom Resources", "custom", customResources);
+                BuildCategory(EditorLocalization.Text("Custom Resources"), "custom", customResources);
             }
             else
             {
@@ -126,7 +126,7 @@ namespace MCPForUnity.Editor.Windows.Components.Resources
 
             var foldout = new Foldout
             {
-                text = $"{title} ({resourceList.Count})",
+                text = EditorLocalization.Format("{0} ({1})", title, resourceList.Count),
                 value = EditorPrefs.GetBool(EditorPrefKeys.ResourceFoldoutStatePrefix + prefsSuffix, true)
             };
 
@@ -225,24 +225,28 @@ namespace MCPForUnity.Editor.Windows.Components.Resources
 
             if (allResources.Count == 0)
             {
-                summaryLabel.text = "No MCP resources discovered.";
+                summaryLabel.text = EditorLocalization.Text("No MCP resources discovered.");
                 return;
             }
 
             int enabledCount = allResources.Count(r => MCPServiceLocator.ResourceDiscovery.IsResourceEnabled(r.Name));
-            summaryLabel.text = $"{enabledCount} of {allResources.Count} resources enabled.";
+            summaryLabel.text = EditorLocalization.Format(
+                "{0} of {1} resources enabled.",
+                enabledCount,
+                allResources.Count
+            );
         }
 
         private void AddInfoLabel(string message)
         {
-            var label = new Label(message);
+            var label = new Label(EditorLocalization.Text(message));
             label.AddToClassList("help-text");
             categoryContainer?.Add(label);
         }
 
         private static Label CreateTag(string text)
         {
-            var tag = new Label(text);
+            var tag = new Label(EditorLocalization.Text(text));
             tag.AddToClassList("tool-tag");
             return tag;
         }

@@ -113,10 +113,16 @@ namespace MCPForUnity.Editor.Services
 
             try
             {
-                EditorUtility.DisplayProgressBar("Deploy MCP for Unity", "Creating backup...", 0.25f);
+                EditorUtility.DisplayProgressBar(
+                    EditorLocalization.Text("Deploy MCP for Unity"),
+                    EditorLocalization.Text("Creating backup..."),
+                    0.25f);
                 string backupPath = CreateBackup(targetPath);
 
-                EditorUtility.DisplayProgressBar("Deploy MCP for Unity", "Replacing package contents...", 0.7f);
+                EditorUtility.DisplayProgressBar(
+                    EditorLocalization.Text("Deploy MCP for Unity"),
+                    EditorLocalization.Text("Replacing package contents..."),
+                    0.7f);
                 CopyCoreFolders(sourcePath, targetPath);
 
                 EditorPrefs.SetString(EditorPrefKeys.PackageDeployLastBackupPath, backupPath);
@@ -159,7 +165,10 @@ namespace MCPForUnity.Editor.Services
 
             try
             {
-                EditorUtility.DisplayProgressBar("Restore MCP for Unity", "Restoring backup...", 0.5f);
+                EditorUtility.DisplayProgressBar(
+                    EditorLocalization.Text("Restore MCP for Unity"),
+                    EditorLocalization.Text("Restoring backup..."),
+                    0.5f);
                 ReplaceDirectory(backupPath, targetPath);
 
                 AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);

@@ -152,11 +152,11 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
 
             // Set tooltips
             if (httpUrlField != null)
-                httpUrlField.tooltip = "HTTP endpoint URL for the MCP server. Use localhost for local servers.";
+                httpUrlField.tooltip = EditorLocalization.Text("HTTP endpoint URL for the MCP server. Use localhost for local servers.");
             if (unityPortField != null)
-                unityPortField.tooltip = "Port for Unity's internal MCP bridge socket. Used for stdio transport.";
+                unityPortField.tooltip = EditorLocalization.Text("Port for Unity's internal MCP bridge socket. Used for stdio transport.");
             if (connectionToggleButton != null)
-                connectionToggleButton.tooltip = "Start or end the MCP session between Unity and the server.";
+                connectionToggleButton.tooltip = EditorLocalization.Text("Start or end the MCP session between Unity and the server.");
 
             httpUrlField.value = HttpEndpointUtility.GetBaseUrl();
 
@@ -164,7 +164,7 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
             if (apiKeyField != null)
             {
                 apiKeyField.value = EditorPrefs.GetString(EditorPrefKeys.ApiKey, string.Empty);
-                apiKeyField.tooltip = "API key for remote-hosted MCP server authentication";
+                apiKeyField.tooltip = EditorLocalization.Text("API key for remote-hosted MCP server authentication");
                 apiKeyField.isPasswordField = true;
                 apiKeyField.maskChar = '*';
             }
@@ -407,10 +407,10 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                     ? System.IO.Path.GetFileName(projectDir)
                     : "Unity";
                 if (string.IsNullOrEmpty(instanceName)) instanceName = "Unity";
-                connectionStatusLabel.text = $"Session Active ({instanceName})";
+                connectionStatusLabel.text = EditorLocalization.Format("Session Active ({0})", instanceName);
                 statusIndicator.RemoveFromClassList("disconnected");
                 statusIndicator.AddToClassList("connected");
-                connectionToggleButton.text = stdioSelected ? "End Session" : "Disconnect";
+                connectionToggleButton.text = EditorLocalization.Text(stdioSelected ? "End Session" : "Disconnect");
                 connectionToggleButton.SetEnabled(true); // Re-enable in case it was disabled during resumption
 
                 // Force the UI to reflect the actual port being used
@@ -426,19 +426,19 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
 
                 if (isStdioResuming)
                 {
-                    connectionStatusLabel.text = "Resuming...";
+                    connectionStatusLabel.text = EditorLocalization.Text("Resuming...");
                     // Keep the indicator in a neutral/transitional state
                     statusIndicator.RemoveFromClassList("connected");
                     statusIndicator.RemoveFromClassList("disconnected");
-                    connectionToggleButton.text = stdioSelected ? "Start Session" : "Connect";
+                    connectionToggleButton.text = EditorLocalization.Text(stdioSelected ? "Start Session" : "Connect");
                     connectionToggleButton.SetEnabled(false);
                 }
                 else
                 {
-                    connectionStatusLabel.text = "No Session";
+                    connectionStatusLabel.text = EditorLocalization.Text("No Session");
                     statusIndicator.RemoveFromClassList("connected");
                     statusIndicator.AddToClassList("disconnected");
-                    connectionToggleButton.text = stdioSelected ? "Start Session" : "Connect";
+                    connectionToggleButton.text = EditorLocalization.Text(stdioSelected ? "Start Session" : "Connect");
 
                     bool httpRemoteSelected = transportDropdown != null
                         && (TransportProtocol)transportDropdown.value == TransportProtocol.HTTPRemote;
@@ -460,15 +460,15 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
 
                     if (httpRemoteNeedsKey)
                     {
-                        connectionToggleButton.tooltip = "An API key is required for HTTP Remote. Enter one above.";
+                        connectionToggleButton.tooltip = EditorLocalization.Text("An API key is required for HTTP Remote. Enter one above.");
                     }
                     else if (blockedByRemoteUrlPolicy)
                     {
-                        connectionToggleButton.tooltip = remoteUrlError ?? "HTTP Remote URL is blocked by current security settings.";
+                        connectionToggleButton.tooltip = EditorLocalization.Text(remoteUrlError ?? "HTTP Remote URL is blocked by current security settings.");
                     }
                     else if (blockedByLocalUrlPolicy)
                     {
-                        connectionToggleButton.tooltip = localUrlError ?? "HTTP Local URL is blocked by current security settings.";
+                        connectionToggleButton.tooltip = EditorLocalization.Text(localUrlError ?? "HTTP Local URL is blocked by current security settings.");
                     }
                     else
                     {
@@ -529,7 +529,12 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                 if (httpServerCommandHint != null)
                 {
                     string requirements = HttpEndpointUtility.GetHttpLocalHostRequirementText();
-                    httpServerCommandHint.text = $"⚠ {localUrlError ?? $"HTTP Local requires a loopback URL ({requirements})."}";
+                    httpServerCommandHint.text = "⚠ " + EditorLocalization.Text(
+                        localUrlError ?? EditorLocalization.Format(
+                            "HTTP Local requires a loopback URL ({0}).",
+                            requirements
+                        )
+                    );
                     httpServerCommandHint.AddToClassList("http-local-url-error");
                 }
                 copyHttpServerCommandButton?.SetEnabled(false);
@@ -549,7 +554,9 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                 httpServerCommandField.tooltip = command;
                 if (httpServerCommandHint != null)
                 {
-                    httpServerCommandHint.text = "Run this command in your shell if you prefer to start the server manually.";
+                    httpServerCommandHint.text = EditorLocalization.Text(
+                        "Run this command in your shell if you prefer to start the server manually."
+                    );
                 }
                 if (copyHttpServerCommandButton != null)
                 {
@@ -562,7 +569,9 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                 httpServerCommandField.tooltip = string.Empty;
                 if (httpServerCommandHint != null)
                 {
-                    httpServerCommandHint.text = error ?? "The command is not available with the current configuration.";
+                    httpServerCommandHint.text = EditorLocalization.Text(
+                        error ?? "The command is not available with the current configuration."
+                    );
                 }
                 if (copyHttpServerCommandButton != null)
                 {
@@ -655,11 +664,11 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
             // While we are launching+connecting and the server isn't up yet, show a transient "Starting…" label.
             if (httpServerToggleInProgress && !localServerRunning)
             {
-                startHttpServerButton.text = "Starting…";
+                startHttpServerButton.text = EditorLocalization.Text("Starting…");
             }
             else
             {
-                startHttpServerButton.text = shouldShowStop ? "Stop Server" : "Start Server";
+                startHttpServerButton.text = EditorLocalization.Text(shouldShowStop ? "Stop Server" : "Start Server");
             }
             // Note: Server logs may contain transient HTTP 400s on /mcp during startup probing and
             // CancelledError stack traces on shutdown when streaming requests are cancelled; this is expected.
@@ -720,7 +729,7 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                     if (!TryGetLocalHttpLaunchPolicy(out _, out string localPolicyError))
                     {
                         string errorMsg = localPolicyError ?? "HTTP Local URL is blocked by current security settings.";
-                        EditorUtility.DisplayDialog("Cannot Start HTTP Server", errorMsg, "OK");
+                        EditorLocalization.DisplayDialog("Cannot Start HTTP Server", errorMsg, "OK");
                         McpLog.Warn($"Start server blocked by local URL security policy: {errorMsg}");
                         return;
                     }
@@ -742,7 +751,11 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
             catch (Exception ex)
             {
                 McpLog.Error($"HTTP server toggle failed: {ex.Message}");
-                EditorUtility.DisplayDialog("Error", $"Failed to toggle local HTTP server:\n\n{ex.Message}", "OK");
+                EditorLocalization.DisplayDialog(
+                    "Error",
+                    EditorLocalization.Format("Failed to toggle local HTTP server:\n\n{0}", ex.Message),
+                    "OK"
+                );
             }
             finally
             {
@@ -826,9 +839,12 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
             catch (Exception ex)
             {
                 McpLog.Warn($"Failed to persist Unity socket port: {ex.Message}");
-                EditorUtility.DisplayDialog(
+                EditorLocalization.DisplayDialog(
                     "Port Unavailable",
-                    $"The requested port could not be used:\n\n{ex.Message}\n\nReverting to the active Unity port.",
+                    EditorLocalization.Format(
+                        "The requested port could not be used:\n\n{0}\n\nReverting to the active Unity port.",
+                        ex.Message
+                    ),
                     "OK");
                 unityPortField.value = MCPServiceLocator.Bridge.CurrentPort.ToString();
             }
@@ -872,7 +888,7 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                         && !HttpEndpointUtility.IsCurrentRemoteUrlAllowed(out string remotePolicyError))
                     {
                         string errorMsg = remotePolicyError ?? "HTTP Remote URL is blocked by current security settings.";
-                        EditorUtility.DisplayDialog("Connection Blocked", errorMsg, "OK");
+                        EditorLocalization.DisplayDialog("Connection Blocked", errorMsg, "OK");
                         McpLog.Warn($"Connection blocked by remote URL security policy: {errorMsg}");
                         return;
                     }
@@ -882,7 +898,7 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                         && !TryGetLocalHttpLaunchPolicy(out _, out string localPolicyError))
                     {
                         string errorMsg = localPolicyError ?? "HTTP Local URL is blocked by current security settings.";
-                        EditorUtility.DisplayDialog("Connection Blocked", errorMsg, "OK");
+                        EditorLocalization.DisplayDialog("Connection Blocked", errorMsg, "OK");
                         McpLog.Warn($"Connection blocked by local URL security policy: {errorMsg}");
                         return;
                     }
@@ -913,8 +929,8 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                             ? TransportMode.Http : TransportMode.Stdio;
                         var state = MCPServiceLocator.TransportManager.GetState(mode);
                         string errorMsg = state?.Error
-                            ?? "Failed to start the MCP session. Check the server URL and that the server is running.";
-                        EditorUtility.DisplayDialog("Connection Failed", errorMsg, "OK");
+                            ?? EditorLocalization.Text("Failed to start the MCP session. Check the server URL and that the server is running.");
+                        EditorLocalization.DisplayDialog("Connection Failed", errorMsg, "OK");
                         if (httpRemoteSelected)
                         {
                             McpLog.Error($"Connection failed: {errorMsg}");
@@ -929,8 +945,8 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
             catch (Exception ex)
             {
                 McpLog.Error($"Connection toggle failed: {ex.Message}");
-                EditorUtility.DisplayDialog("Connection Error",
-                    $"Failed to toggle the MCP connection:\n\n{ex.Message}",
+                EditorLocalization.DisplayDialog("Connection Error",
+                    EditorLocalization.Format("Failed to toggle the MCP connection:\n\n{0}", ex.Message),
                     "OK");
             }
             finally
@@ -1000,7 +1016,7 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                 string loginUrl = await GetLoginUrlAsync();
                 if (string.IsNullOrEmpty(loginUrl))
                 {
-                    EditorUtility.DisplayDialog("API Key",
+                    EditorLocalization.DisplayDialog("API Key",
                         "API key management is not available for this server. Contact your server administrator.",
                         "OK");
                     return;
@@ -1010,8 +1026,8 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
             catch (Exception ex)
             {
                 McpLog.Error($"Failed to get login URL: {ex.Message}");
-                EditorUtility.DisplayDialog("Error",
-                    $"Failed to get API key login URL:\n\n{ex.Message}",
+                EditorLocalization.DisplayDialog("Error",
+                    EditorLocalization.Format("Failed to get API key login URL:\n\n{0}", ex.Message),
                     "OK");
             }
             finally
@@ -1200,8 +1216,12 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                 string clientTransportName = TransportDisplayName(clientTransport);
                 string serverTransportName = TransportDisplayName(serverTransport);
 
-                transportMismatchText.text = $"⚠ {clientName} is configured for \"{clientTransportName}\" but server is set to \"{serverTransportName}\". " +
-                    "Click \"Configure\" in Client Configuration to update.";
+                transportMismatchText.text = "⚠ " + EditorLocalization.Format(
+                    "{0} is configured for \"{1}\" but server is set to \"{2}\". Click \"Configure\" in Client Configuration to update.",
+                    clientName,
+                    clientTransportName,
+                    serverTransportName
+                );
                 transportMismatchWarning.AddToClassList("visible");
             }
             else
@@ -1235,7 +1255,7 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
                 return;
             }
 
-            versionMismatchText.text = $"⚠ {clientName}: {mismatchMessage}";
+            versionMismatchText.text = EditorLocalization.Format("⚠ {0}: {1}", clientName, mismatchMessage);
             versionMismatchWarning.AddToClassList("visible");
         }
 

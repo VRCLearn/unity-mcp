@@ -167,6 +167,7 @@ namespace MCPForUnity.Editor.Windows
 
             rootVisualElement.Clear();
             visualTree.CloneTree(rootVisualElement);
+            EditorLocalization.LocalizeTree(rootVisualElement);
 
             // Load main window USS
             var mainStyleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(
@@ -267,6 +268,7 @@ namespace MCPForUnity.Editor.Windows
             if (connectionTree != null)
             {
                 var connectionRoot = connectionTree.Instantiate();
+                EditorLocalization.LocalizeTree(connectionRoot);
                 clientsContainer.Add(connectionRoot);
                 connectionSection = new McpConnectionSection(connectionRoot);
                 connectionSection.OnManualConfigUpdateRequested += () =>
@@ -282,6 +284,7 @@ namespace MCPForUnity.Editor.Windows
             if (clientConfigTree != null)
             {
                 var clientConfigRoot = clientConfigTree.Instantiate();
+                EditorLocalization.LocalizeTree(clientConfigRoot);
                 clientsContainer.Add(clientConfigRoot);
                 clientConfigSection = new McpClientConfigSection(clientConfigRoot);
 
@@ -298,6 +301,7 @@ namespace MCPForUnity.Editor.Windows
 
             // Build Dependencies section (replaces old Roslyn + Validation in Deps tab)
             BuildDependenciesSection(depsContainer);
+            EditorLocalization.LocalizeTree(depsContainer);
 
             // Load and initialize Advanced section
             var advancedTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
@@ -306,6 +310,7 @@ namespace MCPForUnity.Editor.Windows
             if (advancedTree != null)
             {
                 var advancedRoot = advancedTree.Instantiate();
+                EditorLocalization.LocalizeTree(advancedRoot);
                 advancedContainer.Add(advancedRoot);
                 advancedSection = new McpAdvancedSection(advancedRoot);
 
@@ -339,6 +344,7 @@ namespace MCPForUnity.Editor.Windows
             if (validationTree != null)
             {
                 var validationRoot = validationTree.Instantiate();
+                EditorLocalization.LocalizeTree(validationRoot);
                 advancedContainer.Add(validationRoot);
                 new McpValidationSection(validationRoot);
             }
@@ -350,6 +356,7 @@ namespace MCPForUnity.Editor.Windows
             if (toolsTree != null)
             {
                 var toolsRoot = toolsTree.Instantiate();
+                EditorLocalization.LocalizeTree(toolsRoot);
                 toolsContainer.Add(toolsRoot);
                 toolsSection = new McpToolsSection(toolsRoot);
 
@@ -370,6 +377,7 @@ namespace MCPForUnity.Editor.Windows
             if (resourcesTree != null)
             {
                 var resourcesRoot = resourcesTree.Instantiate();
+                EditorLocalization.LocalizeTree(resourcesRoot);
                 resourcesContainer.Add(resourcesRoot);
                 resourcesSection = new McpResourcesSection(resourcesRoot);
 
@@ -390,6 +398,7 @@ namespace MCPForUnity.Editor.Windows
             if (assetGenTree != null)
             {
                 var assetGenRoot = assetGenTree.Instantiate();
+                EditorLocalization.LocalizeTree(assetGenRoot);
                 assetGenContainer.Add(assetGenRoot);
                 assetGenSection = new McpAssetGenSection(assetGenRoot);
             }
@@ -419,7 +428,11 @@ namespace MCPForUnity.Editor.Windows
             string version = AssetPathUtility.GetPackageVersion();
             versionLabel.text = $"v{version}";
             versionLabel.tooltip = AssetPathUtility.IsPreReleaseVersion()
-                ? $"{ProductInfo.ProductName} v{version} (pre-release package, using prerelease server channel)"
+                ? EditorLocalization.Format(
+                    "{0} v{1} (pre-release package, using prerelease server channel)",
+                    ProductInfo.ProductName,
+                    version
+                )
                 : $"{ProductInfo.ProductName} v{version}";
         }
 
@@ -503,8 +516,16 @@ namespace MCPForUnity.Editor.Windows
         {
             if (result != null && result.CheckSucceeded && result.UpdateAvailable && !string.IsNullOrEmpty(result.LatestVersion))
             {
-                updateNotificationText.text = $"Update available: v{result.LatestVersion}  (current: v{currentVersion})";
-                updateNotificationText.tooltip = $"Latest version: v{result.LatestVersion}\nCurrent version: v{currentVersion}";
+                updateNotificationText.text = EditorLocalization.Format(
+                    "Update available: v{0}  (current: v{1})",
+                    result.LatestVersion,
+                    currentVersion
+                );
+                updateNotificationText.tooltip = EditorLocalization.Format(
+                    "Latest version: v{0}\nCurrent version: v{1}",
+                    result.LatestVersion,
+                    currentVersion
+                );
                 updateNotification.AddToClassList("visible");
             }
             else
@@ -576,12 +597,14 @@ namespace MCPForUnity.Editor.Windows
         private void OnEnable()
         {
             EditorApplication.update += OnEditorUpdate;
+            EditorLocalization.LanguageChanged += OnLanguageChanged;
             OpenWindows.Add(this);
         }
 
         private void OnDisable()
         {
             EditorApplication.update -= OnEditorUpdate;
+            EditorLocalization.LanguageChanged -= OnLanguageChanged;
             OpenWindows.Remove(this);
             guiCreated = false;
             toolsLoaded = false;
@@ -613,6 +636,23 @@ namespace MCPForUnity.Editor.Windows
                 return;
 
             connectionSection?.UpdateConnectionStatus();
+        }
+
+        private void OnLanguageChanged()
+        {
+            EditorApplication.delayCall += () =>
+            {
+                if (this == null)
+                {
+                    return;
+                }
+
+                guiCreated = false;
+                toolsLoaded = false;
+                resourcesLoaded = false;
+                CreateGUI();
+                Repaint();
+            };
         }
 
         private void RefreshAllData()
@@ -818,14 +858,16 @@ namespace MCPForUnity.Editor.Windows
             var section = new VisualElement();
             section.AddToClassList("section");
 
-            var title = new Label("Optional Dependencies");
+            var title = new Label(EditorLocalization.Text("Optional Dependencies"));
             title.AddToClassList("section-title");
             section.Add(title);
 
             var content = new VisualElement();
             content.AddToClassList("section-content");
 
-            var desc = new Label("Some tool groups require optional packages. Install them to unlock additional capabilities.");
+            var desc = new Label(EditorLocalization.Text(
+                "Some tool groups require optional packages. Install them to unlock additional capabilities."
+            ));
             desc.AddToClassList("validation-description");
             desc.style.marginBottom = 4;
             content.Add(desc);
@@ -840,19 +882,19 @@ namespace MCPForUnity.Editor.Windows
             Button installAllButton = null;
             installAllButton = new Button(() =>
             {
-                if (!EditorUtility.DisplayDialog("Install All Dependencies",
+                if (!EditorLocalization.DisplayDialog("Install All Dependencies",
                     "This will install Roslyn DLLs, ProBuilder, Cinemachine, VFX Graph, and glTFast. Continue?",
                     "Install All", "Cancel")) return;
                 installAllButton.SetEnabled(false);
-                installAllButton.text = "Installing...";
+                installAllButton.text = EditorLocalization.Text("Installing...");
                 if (!RoslynInstaller.IsInstalled()) RoslynInstaller.Install(interactive: false);
                 BatchUpmAdd(upmPackages, () =>
                 {
                     installAllButton.SetEnabled(true);
-                    installAllButton.text = "Install All";
+                    installAllButton.text = EditorLocalization.Text("Install All");
                 });
             });
-            installAllButton.text = "Install All";
+            installAllButton.text = EditorLocalization.Text("Install All");
             installAllButton.AddToClassList("action-button");
             installAllButton.style.marginRight = 4;
             bulkRow.Add(installAllButton);
@@ -860,19 +902,19 @@ namespace MCPForUnity.Editor.Windows
             Button uninstallAllButton = null;
             uninstallAllButton = new Button(() =>
             {
-                if (!EditorUtility.DisplayDialog("Uninstall All Dependencies",
+                if (!EditorLocalization.DisplayDialog("Uninstall All Dependencies",
                     "This will remove Roslyn DLLs, ProBuilder, Cinemachine, VFX Graph, and glTFast. Continue?",
                     "Uninstall All", "Cancel")) return;
                 uninstallAllButton.SetEnabled(false);
-                uninstallAllButton.text = "Removing...";
+                uninstallAllButton.text = EditorLocalization.Text("Removing...");
                 UninstallRoslyn();
                 BatchUpmRemove(upmPackages, () =>
                 {
                     uninstallAllButton.SetEnabled(true);
-                    uninstallAllButton.text = "Uninstall All";
+                    uninstallAllButton.text = EditorLocalization.Text("Uninstall All");
                 });
             });
-            uninstallAllButton.text = "Uninstall All";
+            uninstallAllButton.text = EditorLocalization.Text("Uninstall All");
             uninstallAllButton.AddToClassList("action-button");
             bulkRow.Add(uninstallAllButton);
 
@@ -959,7 +1001,7 @@ namespace MCPForUnity.Editor.Windows
             header.style.alignItems = Align.Center;
             header.style.marginBottom = 2;
 
-            var nameLabel = new Label(name);
+            var nameLabel = new Label(EditorLocalization.Text(name));
             nameLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
             nameLabel.style.flexGrow = 1;
             header.Add(nameLabel);
@@ -971,12 +1013,12 @@ namespace MCPForUnity.Editor.Windows
 
             row.Add(header);
 
-            var descLabel = new Label(description);
+            var descLabel = new Label(EditorLocalization.Text(description));
             descLabel.AddToClassList("validation-description");
             descLabel.style.marginBottom = 2;
             row.Add(descLabel);
 
-            var statusText = new Label(isInstalled ? installedText : missingText);
+            var statusText = new Label(EditorLocalization.Text(isInstalled ? installedText : missingText));
             statusText.style.fontSize = 11;
             statusText.style.color = isInstalled ? new Color(0.6f, 0.8f, 0.6f) : new Color(0.8f, 0.7f, 0.5f);
             row.Add(statusText);
@@ -991,11 +1033,11 @@ namespace MCPForUnity.Editor.Windows
                 btn = new Button(() =>
                 {
                     btn.SetEnabled(false);
-                    btn.text = "Installing...";
+                    btn.text = EditorLocalization.Text("Installing...");
                     Action restore = () =>
                     {
                         btn.SetEnabled(true);
-                        btn.text = "Install";
+                        btn.text = EditorLocalization.Text("Install");
                     };
                     try { installAction(restore); }
                     catch (Exception e)
@@ -1004,7 +1046,7 @@ namespace MCPForUnity.Editor.Windows
                         restore();
                     }
                 });
-                btn.text = "Install";
+                btn.text = EditorLocalization.Text("Install");
                 btn.AddToClassList("action-button");
                 buttonRow.Add(btn);
             }
@@ -1014,14 +1056,18 @@ namespace MCPForUnity.Editor.Windows
                 Button btn = null;
                 btn = new Button(() =>
                 {
-                    if (!EditorUtility.DisplayDialog("Remove " + name,
-                        $"Are you sure you want to remove {name}?", "Remove", "Cancel")) return;
+                    if (!EditorLocalization.DisplayDialog(
+                        EditorLocalization.Format("Remove {0}", EditorLocalization.Text(name)),
+                        EditorLocalization.Format("Are you sure you want to remove {0}?", EditorLocalization.Text(name)),
+                        "Remove",
+                        "Cancel"
+                    )) return;
                     btn.SetEnabled(false);
-                    btn.text = "Removing...";
+                    btn.text = EditorLocalization.Text("Removing...");
                     Action restore = () =>
                     {
                         btn.SetEnabled(true);
-                        btn.text = "Uninstall";
+                        btn.text = EditorLocalization.Text("Uninstall");
                     };
                     try { uninstallAction(restore); }
                     catch (Exception e)
@@ -1030,7 +1076,7 @@ namespace MCPForUnity.Editor.Windows
                         restore();
                     }
                 });
-                btn.text = "Uninstall";
+                btn.text = EditorLocalization.Text("Uninstall");
                 btn.AddToClassList("action-button");
                 buttonRow.Add(btn);
             }
@@ -1054,14 +1100,22 @@ namespace MCPForUnity.Editor.Windows
         private static void BatchUpmAdd(string[] packageIds, Action onComplete = null)
         {
             var request = UnityEditor.PackageManager.Client.AddAndRemove(packageIds, null);
-            EditorUtility.DisplayProgressBar("Installing Packages", $"Installing {packageIds.Length} package(s)...", 0.5f);
+            EditorUtility.DisplayProgressBar(
+                EditorLocalization.Text("Installing Packages"),
+                EditorLocalization.Format("Installing {0} package(s)...", packageIds.Length),
+                0.5f
+            );
             PollUpmRequest(request, "install", onComplete);
         }
 
         private static void BatchUpmRemove(string[] packageIds, Action onComplete = null)
         {
             var request = UnityEditor.PackageManager.Client.AddAndRemove(null, packageIds);
-            EditorUtility.DisplayProgressBar("Removing Packages", $"Removing {packageIds.Length} package(s)...", 0.5f);
+            EditorUtility.DisplayProgressBar(
+                EditorLocalization.Text("Removing Packages"),
+                EditorLocalization.Format("Removing {0} package(s)...", packageIds.Length),
+                0.5f
+            );
             PollUpmRequest(request, "remove", onComplete);
         }
 

@@ -245,9 +245,10 @@ namespace MCPForUnity.Editor.Services
             {
                 if (!quiet)
                 {
-                    EditorUtility.DisplayDialog(
+                    EditorLocalization.DisplayDialog(
                         "Cannot Start HTTP Server",
-                        error ?? "The server command could not be constructed with the current settings.",
+                        error ?? EditorLocalization.Text(
+                            "The server command could not be constructed with the current settings."),
                         "OK");
                 }
                 return false;
@@ -267,11 +268,13 @@ namespace MCPForUnity.Editor.Services
                     {
                         if (!quiet)
                         {
-                            EditorUtility.DisplayDialog(
+                            EditorLocalization.DisplayDialog(
                                 "Port In Use",
-                                $"Cannot start the local HTTP server because port {uri.Port} is already in use by PID(s): " +
-                                $"{string.Join(", ", remaining)}\n\n" +
-                                $"{ProductInfo.ProductName} will not terminate unrelated processes. Stop the owning process manually or change the HTTP URL.",
+                                EditorLocalization.Format(
+                                    "Cannot start the local HTTP server because port {0} is already in use by PID(s): {1}\n\n{2} will not terminate unrelated processes. Stop the owning process manually or change the HTTP URL.",
+                                    uri.Port,
+                                    string.Join(", ", remaining),
+                                    ProductInfo.ProductName),
                                 "OK");
                         }
                         return false;
@@ -298,7 +301,7 @@ namespace MCPForUnity.Editor.Services
             // First-time-only confirmation. Subsequent launches (and the quiet auto-start path) skip the dialog.
             if (!quiet && !EditorPrefs.GetBool(EditorPrefKeys.HttpServerLaunchConfirmed, false))
             {
-                if (!EditorUtility.DisplayDialog(
+                if (!EditorLocalization.DisplayDialog(
                     "Start Local HTTP Server",
                     "Start the local MCP server in the background?\n\n" +
                     "It launches headless (no terminal window) and logs progress to the Unity Console. " +
@@ -371,9 +374,9 @@ namespace MCPForUnity.Editor.Services
                 McpLog.Error($"Failed to start server: {ex.Message}");
                 if (!quiet)
                 {
-                    EditorUtility.DisplayDialog(
+                    EditorLocalization.DisplayDialog(
                         "Error",
-                        $"Failed to start server: {ex.Message}",
+                        EditorLocalization.Format("Failed to start server: {0}", ex.Message),
                         "OK");
                 }
                 return false;

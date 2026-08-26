@@ -1,7 +1,8 @@
 using System;
+using System.Collections.Generic;
 using MCPForUnity.Editor.Constants;
+using MCPForUnity.Editor.Helpers;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,7 +15,7 @@ namespace MCPForUnity.Editor.Windows.Components.Validation
     public class McpValidationSection
     {
         // UI Elements
-        private EnumField validationLevelField;
+        private DropdownField validationLevelField;
         private Label validationDescription;
 
         // Data
@@ -41,16 +42,22 @@ namespace MCPForUnity.Editor.Windows.Components.Validation
 
         private void CacheUIElements()
         {
-            validationLevelField = Root.Q<EnumField>("validation-level");
+            validationLevelField = Root.Q<DropdownField>("validation-level");
             validationDescription = Root.Q<Label>("validation-description");
         }
 
         private void InitializeUI()
         {
-            validationLevelField.Init(ValidationLevel.Standard);
             int savedLevel = EditorPrefs.GetInt(EditorPrefKeys.ValidationLevel, 1);
             currentValidationLevel = (ValidationLevel)Mathf.Clamp(savedLevel, 0, 3);
-            validationLevelField.value = currentValidationLevel;
+            validationLevelField.choices = new List<string>
+            {
+                EditorLocalization.Text("Basic"),
+                EditorLocalization.Text("Standard"),
+                EditorLocalization.Text("Comprehensive"),
+                EditorLocalization.Text("Strict"),
+            };
+            validationLevelField.index = (int)currentValidationLevel;
             UpdateValidationDescription();
         }
 
@@ -58,7 +65,7 @@ namespace MCPForUnity.Editor.Windows.Components.Validation
         {
             validationLevelField.RegisterValueChangedCallback(evt =>
             {
-                currentValidationLevel = (ValidationLevel)evt.newValue;
+                currentValidationLevel = (ValidationLevel)validationLevelField.index;
                 EditorPrefs.SetInt(EditorPrefKeys.ValidationLevel, (int)currentValidationLevel);
                 UpdateValidationDescription();
             });
@@ -66,14 +73,14 @@ namespace MCPForUnity.Editor.Windows.Components.Validation
 
         private void UpdateValidationDescription()
         {
-            validationDescription.text = currentValidationLevel switch
+            validationDescription.text = EditorLocalization.Text(currentValidationLevel switch
             {
                 ValidationLevel.Basic => "Basic: Validates syntax only. Fast compilation checks.",
                 ValidationLevel.Standard => "Standard (Recommended): Checks syntax + common errors. Balanced speed and coverage.",
                 ValidationLevel.Comprehensive => "Comprehensive: Detailed validation including code quality. Slower but thorough.",
                 ValidationLevel.Strict => "Strict: Maximum validation + warnings as errors. Slowest but catches all issues.",
                 _ => "Unknown validation level"
-            };
+            });
         }
     }
 }

@@ -47,6 +47,7 @@ namespace MCPForUnity.Editor.Constants
         internal const string ResourceEnabledPrefix = "MCPForUnity.ResourceEnabled.";
         internal const string ResourceFoldoutStatePrefix = "MCPForUnity.ResourceFoldout.";
         internal const string EditorWindowActivePanel = "MCPForUnity.EditorWindow.ActivePanel";
+        internal const string EditorLanguage = "MCPForUnity.EditorLanguage";
         internal const string LastSelectedClientId = "MCPForUnity.LastSelectedClientId";
         internal const string ClientDetailsFoldoutOpen = "MCPForUnity.ClientConfig.DetailsFoldoutOpen";
 

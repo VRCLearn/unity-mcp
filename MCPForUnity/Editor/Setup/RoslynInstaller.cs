@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
+using MCPForUnity.Editor.Helpers;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -60,9 +61,11 @@ namespace MCPForUnity.Editor.Setup
         {
             if (IsInstalled() && interactive)
             {
-                if (!EditorUtility.DisplayDialog(
+                if (!EditorLocalization.DisplayDialog(
                         "Roslyn Already Installed",
-                        $"Roslyn DLLs are already present in Assets/{PluginsRelPath}.\nReinstall?",
+                        EditorLocalization.Format(
+                            "Roslyn DLLs are already present in Assets/{0}.\nReinstall?",
+                            PluginsRelPath),
                         "Reinstall", "Cancel"))
                     return;
             }
@@ -80,8 +83,8 @@ namespace MCPForUnity.Editor.Setup
                     if (interactive)
                     {
                         EditorUtility.DisplayProgressBar(
-                            "Installing Roslyn",
-                            $"Downloading {packageId} v{pkgVersion}...",
+                            EditorLocalization.Text("Installing Roslyn"),
+                            EditorLocalization.Format("Downloading {0} v{1}...", packageId, pkgVersion),
                             (float)i / NuGetEntries.Length);
                     }
 
@@ -114,17 +117,21 @@ namespace MCPForUnity.Editor.Setup
                 }
 
                 if (interactive)
-                    EditorUtility.DisplayProgressBar("Installing Roslyn", "Refreshing assets...", 0.95f);
+                    EditorUtility.DisplayProgressBar(
+                        EditorLocalization.Text("Installing Roslyn"),
+                        EditorLocalization.Text("Refreshing assets..."),
+                        0.95f);
 
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
                 if (interactive)
                 {
                     EditorUtility.ClearProgressBar();
-                    EditorUtility.DisplayDialog(
+                    EditorLocalization.DisplayDialog(
                         "Roslyn Installed",
-                        $"Roslyn DLLs and dependencies installed to Assets/{PluginsRelPath}/.\n\n" +
-                        "The runtime_compilation tool is now available via MCP.",
+                        EditorLocalization.Format(
+                            "Roslyn DLLs and dependencies installed to Assets/{0}/.\n\nThe runtime_compilation tool is now available via MCP.",
+                            PluginsRelPath),
                         "OK");
                 }
 
@@ -137,11 +144,11 @@ namespace MCPForUnity.Editor.Setup
 
                 if (interactive)
                 {
-                    EditorUtility.DisplayDialog(
+                    EditorLocalization.DisplayDialog(
                         "Installation Failed",
-                        $"Could not download Roslyn DLLs:\n{e.Message}\n\n" +
-                        "You can manually download Microsoft.CodeAnalysis.CSharp from NuGet " +
-                        "and place the DLLs in Assets/Plugins/Roslyn/.",
+                        EditorLocalization.Format(
+                            "Could not download Roslyn DLLs:\n{0}\n\nYou can manually download Microsoft.CodeAnalysis.CSharp from NuGet and place the DLLs in Assets/Plugins/Roslyn/.",
+                            e.Message),
                         "OK");
                 }
             }
