@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "mcp__unity",
-      "Edit(reports/**)"
+      "Edit(reports/**)",
+      "MultiEdit(reports/**)"
     ],
     "deny": [
     ]

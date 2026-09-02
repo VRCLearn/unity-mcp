@@ -58,32 +58,10 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
         private static int currentUnityPort = 6400;
         private static bool isAutoConnectMode = false;
         private const ulong MaxFrameBytes = 64UL * 1024 * 1024;
-        // Command/frame I/O timeout for the stdio bridge TCP hop. Previously a
-        // hardcoded 30s const, which cut off long-running tool calls mid-execution
-        // (the client would then reconnect and re-send, causing the bridge to
-        // restart on a new port). Now defaults to 5 minutes and is overridable via
-        // the UNITY_MCP_STDIO_COMMAND_TIMEOUT_MS environment variable.
-        private const int DefaultFrameIOTimeoutMs = 300000;
-        private static readonly int FrameIOTimeoutMs = ResolveFrameIOTimeoutMs();
+        private const int FrameIOTimeoutMs = 30000;
         private static readonly Stopwatch _uptime = Stopwatch.StartNew();
         private static volatile int _consecutiveTimeouts = 0;
         private static bool _processCommandsHooked = false;
-
-        private static int ResolveFrameIOTimeoutMs()
-        {
-            try
-            {
-                string raw = Environment.GetEnvironmentVariable("UNITY_MCP_STDIO_COMMAND_TIMEOUT_MS");
-                if (!string.IsNullOrWhiteSpace(raw)
-                    && int.TryParse(raw.Trim(), out int ms)
-                    && ms > 0)
-                {
-                    return ms;
-                }
-            }
-            catch { /* fall through to default */ }
-            return DefaultFrameIOTimeoutMs;
-        }
 
         private static void IoInfo(string s) { McpLog.Info(s, always: false); }
 
@@ -487,9 +465,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
                         true
                     );
 
-                    // Keep the socket receive timeout at least as long as the command
-                    // timeout so it never fires before a long-running tool call completes.
-                    client.ReceiveTimeout = Math.Max(60000, FrameIOTimeoutMs);
+                    client.ReceiveTimeout = 60000;
 
                     _ = Task.Run(() => HandleClientAsync(client, token), token);
                 }
@@ -849,7 +825,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
 
                     // Evict commands stuck with IsExecuting=true for too long (e.g. from pre-reload state).
                     long nowMs = _uptime.ElapsedMilliseconds;
-                    long staleThresholdMs = 2L * FrameIOTimeoutMs; // 2x the command timeout
+                    const long staleThresholdMs = 2L * FrameIOTimeoutMs; // 60s
                     List<string> staleIds = null;
                     foreach (var kvp in commandQueue)
                     {

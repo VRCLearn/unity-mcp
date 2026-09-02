@@ -8,7 +8,6 @@ using MCPForUnity.Editor.Resources;
 using MCPForUnity.Runtime.Helpers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEditor;
 
 namespace MCPForUnity.Editor.Tools
 {
@@ -71,31 +70,28 @@ namespace MCPForUnity.Editor.Tools
 
             try
             {
-                // TypeCache is Unity's precomputed attribute index, rebuilt once per domain
-                // reload. The previous scan materialised every type in every loaded assembly
-                // and then called GetCustomAttribute on each one twice, which measured at
-                // ~9s per reload on large projects (issue #1336) — work Unity had already
-                // done. McpClientRegistry.BuildRegistry() sets the in-tree precedent.
-                //
-                // It also removes the GetCustomAttribute calls that made the AssetImportWorker
-                // crash in issue #1134; the worker guard above stays regardless, since the
-                // registry is unused there either way.
-                // Ordered by FullName because RegisterCommandType lets a duplicate command
-                // name overwrite the previous handler, so registration order decides which
-                // one wins. TypeCache does not document an order, and the assembly scan this
-                // replaces was stable within a build, so without sorting a name collision
-                // could resolve differently between domain reloads.
+                var allTypes = UnityAssembliesCompat.GetLoadedAssemblies()
+                    .Where(a => !a.IsDynamic)
+                    .SelectMany(a =>
+                    {
+                        try { return a.GetTypes(); }
+                        catch { return new Type[0]; }
+                    })
+                    .ToList();
+
+                // Discover tools
+                var toolTypes = allTypes.Where(t => HasAttributeSafe<McpForUnityToolAttribute>(t));
                 int toolCount = 0;
-                foreach (var type in TypeCache.GetTypesWithAttribute<McpForUnityToolAttribute>()
-                             .OrderBy(t => t.FullName, StringComparer.Ordinal))
+                foreach (var type in toolTypes)
                 {
                     if (RegisterCommandType(type, isResource: false))
                         toolCount++;
                 }
 
+                // Discover resources
+                var resourceTypes = allTypes.Where(t => HasAttributeSafe<McpForUnityResourceAttribute>(t));
                 int resourceCount = 0;
-                foreach (var type in TypeCache.GetTypesWithAttribute<McpForUnityResourceAttribute>()
-                             .OrderBy(t => t.FullName, StringComparer.Ordinal))
+                foreach (var type in resourceTypes)
                 {
                     if (RegisterCommandType(type, isResource: true))
                         resourceCount++;
@@ -106,6 +102,20 @@ namespace MCPForUnity.Editor.Tools
             catch (Exception ex)
             {
                 McpLog.Error($"Failed to auto-discover MCP commands: {ex.Message}");
+            }
+        }
+
+        private static bool HasAttributeSafe<T>(Type type) where T : Attribute
+        {
+            try
+            {
+                return type.GetCustomAttribute<T>() != null;
+            }
+            catch
+            {
+                // Type metadata can be in a half-loaded state during domain reload; treat
+                // those as "no attribute" rather than aborting the whole scan.
+                return false;
             }
         }
 
