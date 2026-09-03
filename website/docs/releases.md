@@ -15,6 +15,55 @@ For the canonical changelog with PR links, see [GitHub Releases](https://github.
 > Auto-generated from the GitHub Releases API by `tools/sync_release_notes.py`. Do not hand-edit — changes will be overwritten on the next sync.
 
 
+## v10.2 series
+
+### [v10.2.0](https://github.com/CoplayDev/unity-mcp/releases/tag/v10.2.0) — 2026-09-01
+
+<details>
+<summary>Show release notes</summary>
+
+## What's Changed
+* docs: record multi-agent HTTP behavior in routing docs by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1311
+* chore: sync main (v10.1.2) into beta by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1313
+* ci: license-free compile check on every PR (incl. forks) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1314
+* fix(execute_code): skip phantom CodeDom BOM error from mcs compiler by @beast-ofcourse in https://github.com/CoplayDev/unity-mcp/pull/1250
+* chore: update Unity package to beta version 10.1.3-beta.2 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1315
+* fix: deduplicate CodeDom assembly references by @kpkhxlgy0 in https://github.com/CoplayDev/unity-mcp/pull/1300
+* chore: update Unity package to beta version 10.1.3-beta.3 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1317
+* fix: make stdio bridge command timeout configurable (default 5m) by @andriy-coplay in https://github.com/CoplayDev/unity-mcp/pull/1320
+* chore: update Unity package to beta version 10.1.3-beta.4 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1321
+* chore: drop unmatched MultiEdit permission rule from .claude/settings.json by @KamilDev in https://github.com/CoplayDev/unity-mcp/pull/1352
+* fix: correct Trae MCP config path by @8ddieHu0314 in https://github.com/CoplayDev/unity-mcp/pull/1346
+* docs: fix broken star history charts by @FaintFlower in https://github.com/CoplayDev/unity-mcp/pull/1330
+* chore: update Unity package to beta version 10.1.3-beta.5 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1354
+* fix: MCP window shows 'Not connected' while the stdio bridge is serving requests by @ananttheant in https://github.com/CoplayDev/unity-mcp/pull/1349
+* Fix duplicate-signature false positives on calls at class-member depth by @pattonjh in https://github.com/CoplayDev/unity-mcp/pull/1334
+* fix(build): save assets and scenes before BuildPlayer by @TeapoyY in https://github.com/CoplayDev/unity-mcp/pull/1340
+* chore: update Unity package to beta version 10.1.3-beta.6 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1355
+* fix(build): skip never-saved scenes instead of opening the save modal by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1356
+* chore: update Unity package to beta version 10.1.3-beta.7 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1357
+* fix: read_console severity, screenshot color space, execute_code assembly leak, manage_scene package paths by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1353
+* chore: update Unity package to beta version 10.1.3-beta.8 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1363
+* perf(discovery): use TypeCache instead of scanning every loaded assembly by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1364
+* ci: report Skipped instead of a green check when Unity tests cannot run by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1362
+* chore: update Unity package to beta version 10.1.3-beta.9 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1365
+* fix: reference the Roslyn assemblies from MCPForUnity.Editor.asmdef by @ananttheant in https://github.com/CoplayDev/unity-mcp/pull/1359
+* chore: update Unity package to beta version 10.1.3-beta.10 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1366
+* chore: bump version to 10.2.0 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1367
+
+## New Contributors
+* @kpkhxlgy0 made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1300
+* @andriy-coplay made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1320
+* @8ddieHu0314 made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1346
+* @FaintFlower made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1330
+* @pattonjh made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1334
+* @TeapoyY made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1340
+
+**Full Changelog**: https://github.com/CoplayDev/unity-mcp/compare/v10.1.2...v10.2.0
+
+</details>
+
+
 ## v10.1 series
 
 ### [v10.1.2](https://github.com/CoplayDev/unity-mcp/releases/tag/v10.1.2) — 2026-08-02
