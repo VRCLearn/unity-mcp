@@ -14,7 +14,12 @@ permissions: {}
 
 jobs:
   report:
-    if: github.event.workflow_run.head_branch == github.event.repository.default_branch
+    if: >-
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (
+        github.event.workflow_run.head_branch == github.event.repository.default_branch ||
+        github.event.workflow_run.event == 'release'
+      )
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -72,7 +77,7 @@ jobs:
             next_step="$(printf '\n\nIf the run reports upstream workflow changes, open the repository Code page and choose **Sync fork → Update branch**. The resulting push will retry synchronization automatically.')"
           elif [[ "$WORKFLOW_NAME" == "Release VPM package" ]]; then
             upstream_value="$(gh api repos/CoplayDev/unity-mcp/releases/latest --jq .tag_name)"
-            upstream_context="$(printf '\n- Upstream release: `%s`' "$upstream_value")"
+            upstream_context="$(printf '\n- Latest upstream release: `%s`' "$upstream_value")"
           fi
 
           fingerprint="$(
@@ -111,3 +116,78 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "$TITLE" \
             --body "$issue_body"
+
+  reconcile:
+    if: >-
+      always() &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    needs: report
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      issues: write
+    steps:
+      - name: Close stale failure issues after recovery
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          default_branch="$(gh api "repos/${GITHUB_REPOSITORY}" --jq .default_branch)"
+          workflows=(
+            "Build VPM repository listing"
+            "Release VPM package"
+            "Sync upstream main"
+            "Validate VPM package"
+          )
+
+          for workflow_name in "${workflows[@]}"; do
+            title="[automation] ${workflow_name} failed"
+            legacy_title=""
+            if [[ "$workflow_name" == "Sync upstream main" ]]; then
+              legacy_title="[automation] Sync stable upstream release failed"
+            fi
+
+            existing_number="$(
+              gh issue list \
+                --repo "$GITHUB_REPOSITORY" \
+                --state open \
+                --limit 100 \
+                --json number,title \
+                | jq -r \
+                    --arg title "$title" \
+                    --arg legacy "$legacy_title" \
+                    'first(.[] | select(.title == $title or (.title == $legacy and $legacy != "")) | .number) // empty'
+            )"
+            if [[ -z "$existing_number" ]]; then
+              continue
+            fi
+
+            latest_run="$(
+              gh run list \
+                --repo "$GITHUB_REPOSITORY" \
+                --workflow "$workflow_name" \
+                --limit 50 \
+                --json conclusion,event,headBranch,headSha,url \
+                | jq -c \
+                    --arg default_branch "$default_branch" \
+                    'first(
+                      .[]
+                      | select(
+                          (.headBranch == $default_branch or .event == "release") and
+                          (.conclusion == "success" or .conclusion == "failure" or .conclusion == "timed_out")
+                        )
+                    ) // empty'
+            )"
+            if [[ -z "$latest_run" ]] || \
+               [[ "$(jq -r .conclusion <<< "$latest_run")" != "success" ]]; then
+              continue
+            fi
+
+            run_url="$(jq -r .url <<< "$latest_run")"
+            head_sha="$(jq -r .headSha <<< "$latest_run")"
+            gh issue close "$existing_number" \
+              --repo "$GITHUB_REPOSITORY" \
+              --comment "Automation recovery was confirmed by the latest successful **${workflow_name}** run: [open successful run](${run_url}) (commit \`${head_sha}\`)."
+          done
