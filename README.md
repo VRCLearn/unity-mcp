@@ -54,12 +54,16 @@ Control the Unity Editor in natural language from any MCP client — create scen
 ### VRChat Creator Companion
 
 The [VRCLearn fork](https://github.com/VRCLearn/unity-mcp) provides an
-unofficial VPM distribution. Add the following community repository to VCC,
+unofficial VPM distribution through the unified MCP for Unity Launcher repository. Add this community repository to VCC,
 then install **MCP for Unity**:
 
 ```text
-https://vrclearn.github.io/unity-mcp/index.json
+https://vrclearn.github.io/MCP-For-Unity-Launcher/index.json
 ```
+
+The same repository also provides **MCP for Unity Launcher** for automatic
+startup and shared-server recovery. The old VPM URL remains a compatibility
+mirror for existing users; new installations use the unified URL above.
 
 VPM installs the Unity plugin; Python, `uv`, and MCP client configuration still
 use the normal setup flow below. See [VPM.md](VPM.md) for packaging and
