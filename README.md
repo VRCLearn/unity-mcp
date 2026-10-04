@@ -62,8 +62,7 @@ https://vrclearn.github.io/MCP-For-Unity-Launcher/index.json
 ```
 
 The same repository also provides **MCP for Unity Launcher** for automatic
-startup and shared-server recovery. The old VPM URL remains a compatibility
-mirror for existing users; new installations use the unified URL above.
+startup and shared-server recovery.
 
 VPM installs the Unity plugin; Python, `uv`, and MCP client configuration still
 use the normal setup flow below. See [VPM.md](VPM.md) for packaging and

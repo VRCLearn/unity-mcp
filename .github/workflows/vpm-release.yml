@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          config=.github/vpm/source.json
+          config=.github/vpm/release-config.json
           upstream_repo="$(jq -r '.upstreamRepository' "$config")"
           bootstrap_version="$(jq -r '.releaseBootstrapVersion' "$config")"
           main_sha="$(git rev-parse HEAD)"
@@ -385,12 +385,11 @@ jobs:
             --title "$PACKAGE_VERSION" \
             --notes "$release_notes"
 
-      - name: Refresh the VPM repository listing
+      - name: Continue publishing pending upstream releases
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh workflow run vpm-listing.yml --ref main
           gh workflow run vpm-release.yml --ref main
 
   cleanup:

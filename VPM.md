@@ -16,13 +16,6 @@ Then add **MCP for Unity** (`com.coplaydev.unity-mcp`) to the desired project.
 The same repository provides **MCP for Unity Launcher**
 (`io.github.vrclearn.mcp-for-unity-launcher`) for automatic service management.
 
-The old `https://vrclearn.github.io/unity-mcp/index.json` address remains a
-compatibility mirror containing both packages and their stable versions. Its
-repository ID and URL are preserved for existing VPM clients, while the old
-website directs new users to the unified repository. Existing projects do not
-need to reinstall their packages. Add the new repository before removing the old
-entry from VCC or ALCOMD.
-
 VPM installs the Unity Editor plugin only. Python 3.10+, `uv`, and an MCP client
 are still required; finish setup from **Window → MCP for Unity** inside Unity.
 
@@ -99,7 +92,6 @@ the VPM ZIP, a UnityPackage with the same package ID and version, and the staged
 `package.json`. The canonical VPM website is rendered in the Launcher repository
 using the pinned official VRChat listing template. MCP for Unity Releases still
 attach their packages here. Launcher checks both repositories for new stable
-packages on a 15-minute schedule; the scheduler may delay a run. The legacy
-listing also mirrors both package histories through the shared validator, so
-existing clients continue to receive updates. No cross-repository write
+packages on a 15-minute schedule; the scheduler may delay a run. The Launcher
+repository is the only VPM listing publisher. No cross-repository write
 credential is needed.

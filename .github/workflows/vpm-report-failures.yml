@@ -3,7 +3,6 @@ name: Report VPM automation failures
 on:
   workflow_run:
     workflows:
-      - Build VPM repository listing
       - Release VPM package
       - Sync upstream main
       - Validate VPM package
