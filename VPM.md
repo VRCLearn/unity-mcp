@@ -14,7 +14,7 @@ https://vrclearn.github.io/MCP-For-Unity-Launcher/index.json
 
 Then add **MCP for Unity** (`com.coplaydev.unity-mcp`) to the desired project.
 The same repository provides **MCP for Unity Launcher**
-(`io.github.vrclearn.mcp-for-unity-launcher`) for automatic service management.
+(`com.vrclearn.mcp-for-unity-launcher`) for automatic service management.
 
 VPM installs the Unity Editor plugin only. Python 3.10+, `uv`, and an MCP client
 are still required; finish setup from **Window → MCP for Unity** inside Unity.
