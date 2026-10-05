@@ -15,6 +15,65 @@ For the canonical changelog with PR links, see [GitHub Releases](https://github.
 > Auto-generated from the GitHub Releases API by `tools/sync_release_notes.py`. Do not hand-edit — changes will be overwritten on the next sync.
 
 
+## v10.3 series
+
+### [v10.3.0](https://github.com/CoplayDev/unity-mcp/releases/tag/v10.3.0) — 2026-10-04
+
+<details>
+<summary>Show release notes</summary>
+
+## What's Changed
+* chore: sync main (v10.2.0) into beta by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1368
+* perf(discovery): drop the redundant assembly walk from tool discovery too by @ananttheant in https://github.com/CoplayDev/unity-mcp/pull/1369
+* chore: update Unity package to beta version 10.2.1-beta.2 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1377
+* fix: Claude Code registrations invisible to CheckStatus (duplicate path-variant keys, git worktrees) by @crowdedfire in https://github.com/CoplayDev/unity-mcp/pull/1280
+* chore: update Unity package to beta version 10.2.1-beta.3 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1378
+* fix: suppress broker command resends instead of running the work twice by @ananttheant in https://github.com/CoplayDev/unity-mcp/pull/1361
+* chore: update Unity package to beta version 10.2.1-beta.4 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1381
+* fix(read_console): stop the Console window's filters from hiding entries by @KamilDev in https://github.com/CoplayDev/unity-mcp/pull/1342
+* fix(stdio): refresh port discovery before reconnect backoff by @SeojunKim-pumisj in https://github.com/CoplayDev/unity-mcp/pull/1345
+* chore: update Unity package to beta version 10.2.1-beta.5 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1382
+* fix: hardening from the 2026-09-02 beta audit (compile-check on Windows, uv.lock drift, CI stdio pin, auth surface) by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1376
+* chore: update Unity package to beta version 10.2.1-beta.6 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1384
+* feat(setup): show git status in the setup window and explain the Git-URL failure by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1383
+* test(setup): look up UpdateDependencyStatus as static too by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1385
+* docs(skill): say where to look when a tool is not in the tool list by @RizgarOzan in https://github.com/CoplayDev/unity-mcp/pull/1406
+* feat: add Trae CN MCP client configurator by @8ddieHu0314 in https://github.com/CoplayDev/unity-mcp/pull/1392
+* fix(roslyn): drop Workspaces-layer formatting so USE_ROSLYN compiles with the installer's DLLs by @comedianhhh in https://github.com/CoplayDev/unity-mcp/pull/1404
+* docs(reference): add unity_docs and unity_reflect examples by @RizgarOzan in https://github.com/CoplayDev/unity-mcp/pull/1401
+* Fix Unity 6000.6 InstanceIDToObjectCompat NotImplementedException by @yuseres in https://github.com/CoplayDev/unity-mcp/pull/1399
+* docs(reference): add run_tests and get_test_job examples by @RizgarOzan in https://github.com/CoplayDev/unity-mcp/pull/1400
+* fix(animation): resolve the Animator on child objects, not just the exact target by @BurakErdemci in https://github.com/CoplayDev/unity-mcp/pull/1337
+* fix: make refresh_unity's compile wait observable across the domain reload by @KamilDev in https://github.com/CoplayDev/unity-mcp/pull/1347
+* fix: serialize Unity.Mathematics structs by their fields, not their swizzles by @RizgarOzan in https://github.com/CoplayDev/unity-mcp/pull/1418
+* feat(clients): auto-configure Pi by @frostebite in https://github.com/CoplayDev/unity-mcp/pull/1414
+* fix(dependencies): resolve Windows Python behind Store App execution aliases (#1324) by @Pikaswelt in https://github.com/CoplayDev/unity-mcp/pull/1389
+* fix: upper-case Roslyn severity with the invariant culture by @RizgarOzan in https://github.com/CoplayDev/unity-mcp/pull/1420
+* fix(tests): recover jobs after reload, bound focus nudges, and fix CI by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1410
+* fix(windows): preserve window state and Unicode focus metadata by @SeojunKim-pumisj in https://github.com/CoplayDev/unity-mcp/pull/1409
+* feat: Blender Bridge — drive BlenderMCP from the Unity Editor (tool + Asset Gen panel) by @Seungpyo1007 in https://github.com/CoplayDev/unity-mcp/pull/1375
+* feat: auto-discover live fal and OpenRouter asset models by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1421
+* Blender Bridge panel: auto-detect the addon and report the real install state by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1422
+* test: end ExecPathBatchShimTests.cs.meta with a newline so Unity 6 can parse it by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1423
+* ci: bring beta's Unity test gate and uv.lock staging to main before 10.2.1 by @Scriptwonder in https://github.com/CoplayDev/unity-mcp/pull/1424
+* chore: bump version to 10.3.0 by @github-actions[bot] in https://github.com/CoplayDev/unity-mcp/pull/1425
+
+## New Contributors
+* @crowdedfire made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1280
+* @SeojunKim-pumisj made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1345
+* @RizgarOzan made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1406
+* @comedianhhh made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1404
+* @yuseres made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1399
+* @BurakErdemci made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1337
+* @frostebite made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1414
+* @Pikaswelt made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1389
+* @Seungpyo1007 made their first contribution in https://github.com/CoplayDev/unity-mcp/pull/1375
+
+**Full Changelog**: https://github.com/CoplayDev/unity-mcp/compare/v10.2.0...v10.3.0
+
+</details>
+
+
 ## v10.2 series
 
 ### [v10.2.0](https://github.com/CoplayDev/unity-mcp/releases/tag/v10.2.0) — 2026-09-01
